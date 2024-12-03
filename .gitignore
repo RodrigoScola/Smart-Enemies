@@ -1,4 +1,5 @@
-﻿/Library/APIUpdater/ConfigurationCache/UnityEditor.dll.3188FA0AD83A96475F8A0F15E5A84F8A0FA114195861B3ACA63583A4919E66DC.apiupaterconfigs
+﻿/UserSettings/**
+/Library/APIUpdater/ConfigurationCache/UnityEditor.dll.3188FA0AD83A96475F8A0F15E5A84F8A0FA114195861B3ACA63583A4919E66DC.apiupaterconfigs
 /Library/APIUpdater/ConfigurationCache/UnityEngine.CoreModule.dll.A648532367423BF52A41BD7ACF1E5706298D1C330B96FEE01B2B387DEB47DFA1.apiupaterconfigs
 /Library/APIUpdater/ConfigurationCache/UnityEngine.IMGUIModule.dll.63B19FDEB883F004BCC97D23AF40BF57E7D02BAEC8A65E69355ACAB76CD3A9AF.apiupaterconfigs
 /Library/APIUpdater/ConfigurationCache/UnityEngine.JSONSerializeModule.dll.1CF26B8E47BEABE04195486E55F0FB56A5BF99416E4D1D2B71A04CE42E5FFDCC.apiupaterconfigs
@@ -6,6 +7,9 @@
 /Library/APIUpdater/ConfigurationCache/UnityEngine.TextRenderingModule.dll.400DADB3BA474C6DF1E2EA7BA02F4E025D06761450E6D46B0DF5B7DD5218C913.apiupaterconfigs
 /Library/APIUpdater/ConfigurationCache/UnityEngine.UnityWebRequestModule.dll.29D5D866CA67A2C9CDD4B074900130204BE0D80E7F12E17F8E180F84EA465ED5.apiupaterconfigs
 /Library/APIUpdater/project-dependencies.graph
+/Library/**
+/.idea/**
+/Logs/**
 /Library/Artifacts/0a/0a000e5e75b120f09d4acc2354f49240
 /Library/Artifacts/0a/0a3ac30ccd744142766d0c7b46943edf
 /Library/Artifacts/0a/0a8b82fd829f5ce5701c3d188d4a5e97
