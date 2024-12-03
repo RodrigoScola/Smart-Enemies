@@ -43,6 +43,7 @@ context steering
 
 enemy actions
 
+
 enemy needs a kinda flow tree where it decides what to do or the hive does it
 
 ## enemy weights
