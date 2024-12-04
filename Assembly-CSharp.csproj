@@ -46,13 +46,9 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.0.28f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\scripts\Movement.cs" />
-    <Compile Include="Assets\scripts\AiEnemy.cs" />
-    <Compile Include="Assets\scripts\PLayer.cs" />
-    <Compile Include="Assets\Hive.cs" />
+    <Compile Include="Assets\scripts\actions\DebugAction.cs" />
+    <Compile Include="Assets\scripts\actions\AgentAction.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
-    <Compile Include="Assets\scripts\Enemy.cs" />
-    <Compile Include="Assets\scripts\Pos.cs" />
     <Compile Include="Assets\scripts\ActionHandler.cs" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity\Hub\Editor\6000.0.28f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

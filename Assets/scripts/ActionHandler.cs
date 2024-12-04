@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using actions;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.AI;
@@ -9,91 +10,6 @@ public enum Priority {
     Medium = 2,
     Low = 3
 }
-
-
-internal struct AgentAction : IAction {
-    private readonly int id;
-
-    private readonly Priority _priority;
-    private readonly NavMeshAgent agent;
-
-    private ActionHandler parentHandler;
-
-    private bool started;
-
-    private readonly Vector3 pos;
-
-
-    public AgentAction(int id, Priority priority, NavMeshAgent _agent, Vector3 destination) {
-        this.id = id;
-        _priority = priority;
-        agent = _agent;
-        pos = destination;
-
-        parentHandler = null;
-        started = false;
-    }
-
-    public Priority GetPriority() {
-        return _priority;
-    }
-
-    public int GetId() {
-        return id;
-    }
-
-
-    public void Tick() {
-        Assert.IsNotNull(agent, "agent is null");
-
-        //todo: this is trash make it in the done function
-        if (!agent.hasPath && started) parentHandler.ToComplete(id);
-    }
-
-    public void Execute(ActionHandler handler) {
-        parentHandler = handler;
-
-
-        agent.SetDestination(pos);
-        started = true;
-    }
-}
-
-
-internal struct DebugAction : IAction {
-    private readonly int id;
-
-    private readonly Color col;
-    private readonly Priority _priority;
-    private readonly Renderer render;
-
-    public DebugAction(int id, Color col, Priority priority, Renderer _render) {
-        this.id = id;
-        this.col = col;
-        _priority = priority;
-        render = _render;
-    }
-
-    public Priority GetPriority() {
-        return _priority;
-    }
-
-    public void Tick() { }
-
-    public int GetId() {
-        return id;
-    }
-
-    public void Execute(ActionHandler handler) {
-        Assert.IsNotNull(render, "render element does not have a Render");
-
-        render.sharedMaterial.color = col;
-
-
-        handler.Done(id);
-    }
-}
-
 
 public interface IAction {
     public Priority GetPriority();
@@ -115,6 +31,8 @@ public class ActionHandler : MonoBehaviour {
     private readonly List<IAction> ongoing = new();
     private readonly List<int> toFinish = new();
 
+    private LayerMask layerMask;
+
     private int ticks;
 
     private void Start() {
@@ -122,41 +40,53 @@ public class ActionHandler : MonoBehaviour {
         actions.Add(Priority.Medium, new List<IAction>());
         actions.Add(Priority.Low, new List<IAction>());
 
+        layerMask = LayerMask.GetMask("obstacles");
+
+        Debug.Log($"layer mask  {layerMask}");
+
 
         var render = GetComponent<Renderer>();
 
-        Add(new DebugAction(++ids, Color.gray, Priority.High, render));
-        Add(new AgentAction(++ids, Priority.Low, GetComponent<NavMeshAgent>(),
-            new Vector3(0, -0.39519f, -11.95f)
-        ));
-        Add(new DebugAction(++ids, Color.yellow, Priority.High, render));
+
+        Add(new DebugAction(GetId(), Color.yellow, Priority.High, render));
+        Add(new AgentAction(GetId(), Priority.Low, GetComponent<NavMeshAgent>(), new Vector3(0, -0.39519f, -11.95f),
+            layerMask));
+        Add(new DebugAction(GetId(), Color.red, Priority.High, render));
     }
 
     private void Update() {
         var l = Length();
 
-        ticks++;
+        // ticks++;
 
 
         foreach (var action in ongoing) action.Tick();
 
-        if (ticks == 200) {
-            Debug.Log("TICKS NOW");
-            ExecuteNow(
-                new AgentAction(++ids, Priority.Low, GetComponent<NavMeshAgent>(),
-                    new Vector3(0, +0.39519f, 6.95f)
-                ));
+
+        foreach (var action in toFinish) {
+            var index = actionIndex(ongoing, action);
+
+            Assert.IsTrue(index >= 0, $"{action} not found in ongoing actions... was it cleared already?");
+            ongoing.RemoveAt(index);
         }
 
-        foreach (var id in toFinish) Done(id);
+        toFinish.Clear();
+        Assert.IsTrue(toFinish.Count == 0, $"everything should be finished, received {toFinish.Count}");
+
 
         Assert.IsTrue(l >= 0, "length cannot be less than 0");
+    }
+
+    private static int GetId() {
+        ids += 1;
+        return ids;
     }
 
 
     public int Length() {
         return totalActions;
     }
+
 
     private static int actionIndex(List<IAction> actions, int id) {
         for (var i = 0; i < actions.Count; i++)
@@ -178,12 +108,15 @@ public class ActionHandler : MonoBehaviour {
     public void Add(IAction ac) {
         Assert.IsTrue(totalActions < 100, "Way more actions than i expected");
 
+        Debug.Log($"Adding the id {ac.GetId()}");
+
 
         var prio = ac.GetPriority();
 
         actions.TryGetValue(prio, out var l);
 
         Assert.IsNotNull(l, $"got null for priority: {prio}");
+
 
         var hasSame = false;
         l.ForEach(a => {
@@ -221,29 +154,45 @@ public class ActionHandler : MonoBehaviour {
         ac.Execute(this);
     }
 
-    public void ToComplete(int actionId) {
+    public void Finish(int actionId) {
+        Debug.Log($"finishing {actionId}");
+        var ind = actionIndex(ongoing, actionId);
+
+
+        var action = ongoing[ind];
+        Assert.IsNotNull(action, $"action with an id {actionId} came out null");
+
+        Assert.IsTrue(actionId == action.GetId(), "just being protective");
+
+        var finishInd = toFinish.IndexOf(actionId);
+        Assert.IsTrue(finishInd == -1, $"toFinish has duplicate items?, expected: -1, received: {finishInd}");
+
         toFinish.Add(actionId);
+        Done(actionId);
     }
 
-    public void Done(int actionId) {
-        var ongoingAction = actionIndex(ongoing, actionId);
+    private void Done(int actionId) {
+        var index = actionIndex(ongoing, actionId);
+        IAction action = null;
 
 
-        Assert.IsTrue(ongoingAction >= 0, "got done for action that is null");
-        var action = ongoing[ongoingAction];
-        ongoing.RemoveAt(ongoingAction);
+        if (index != -1) action = ongoing[index];
+
+        Assert.IsNotNull(action, "action was not found");
+        Assert.IsTrue(index >= 0, "ongoing action was not found");
+        var currentId = action.GetId();
 
 
         Assert.IsTrue(totalActions >= 0, "cannot have a non negative value for actions");
         Assert.IsTrue(actionId == action.GetId(),
-            $"find action with different ids? expected:{actionId}, received{action.GetId()}");
+            $"find action with different ids? expected:{actionId}, received{currentId}");
 
         var high = GetItems(Priority.High);
 
         if (high.Count > 0) {
             var h = high[0];
             Remove(h);
-            ongoing.Add(h);
+            // ongoing.Add(h);
             h.Execute(this);
             return;
         }
@@ -252,7 +201,7 @@ public class ActionHandler : MonoBehaviour {
         if (medium.Count > 0) {
             var m = medium[0];
             Remove(m);
-            ongoing.Add(m);
+            // ongoing.Add(m);
             m.Execute(this);
             return;
         }
@@ -261,7 +210,7 @@ public class ActionHandler : MonoBehaviour {
         if (low.Count > 0) {
             var l = low[0];
             Remove(l);
-            ongoing.Add(l);
+            // ongoing.Add(l);
             l.Execute(this);
         }
     }
