@@ -49,9 +49,9 @@ public class ActionHandler : MonoBehaviour {
 
 
         Add(new DebugAction(GetId(), Color.yellow, Priority.High, render));
-        Add(new AgentAction(GetId(), Priority.Low, GetComponent<NavMeshAgent>(), new Vector3(0, -0.39519f, -11.95f),
+        Add(new AgentAction(GetId(), Priority.High, GetComponent<NavMeshAgent>(), new Vector3(0, -0.39519f, -11.95f),
             layerMask));
-        Add(new DebugAction(GetId(), Color.red, Priority.High, render));
+        Add(new DebugAction(GetId(), Color.red, Priority.Medium, render));
     }
 
     private void Update() {
@@ -60,6 +60,7 @@ public class ActionHandler : MonoBehaviour {
         // ticks++;
 
 
+        Debug.Log($"ongoing actions: {ongoing.Count}");
         foreach (var action in ongoing) action.Tick();
 
 
@@ -67,7 +68,7 @@ public class ActionHandler : MonoBehaviour {
             var index = actionIndex(ongoing, action);
 
             Assert.IsTrue(index >= 0, $"{action} not found in ongoing actions... was it cleared already?");
-            ongoing.RemoveAt(index);
+            Done(action);
         }
 
         toFinish.Clear();
@@ -107,28 +108,33 @@ public class ActionHandler : MonoBehaviour {
 
     public void Add(IAction ac) {
         Assert.IsTrue(totalActions < 100, "Way more actions than i expected");
+        Assert.IsTrue(toFinish.IndexOf(ac.GetId()) == -1, "cannot add something that is about to finish");
 
         Debug.Log($"Adding the id {ac.GetId()}");
 
 
         var prio = ac.GetPriority();
 
-        actions.TryGetValue(prio, out var l);
+        actions.TryGetValue(prio, out var actionList);
 
-        Assert.IsNotNull(l, $"got null for priority: {prio}");
+        Assert.IsNotNull(actionList, $"got null for priority: {prio}");
 
 
         var hasSame = false;
-        l.ForEach(a => {
+        actionList.ForEach(a => {
             if (a.GetId() == ac.GetId()) hasSame = true;
         });
         Assert.IsFalse(hasSame, "has to have unique ids");
 
 
-        l.Add(ac);
         totalActions++;
 
-        if (ongoing.Count == 0) ExecuteNow(ac);
+        if (ongoing.Count == 0) {
+            ExecuteNow(ac);
+            return;
+        }
+
+        actionList.Add(ac);
     }
 
 
@@ -192,7 +198,7 @@ public class ActionHandler : MonoBehaviour {
         if (high.Count > 0) {
             var h = high[0];
             Remove(h);
-            // ongoing.Add(h);
+            ongoing.Add(h);
             h.Execute(this);
             return;
         }
@@ -201,7 +207,7 @@ public class ActionHandler : MonoBehaviour {
         if (medium.Count > 0) {
             var m = medium[0];
             Remove(m);
-            // ongoing.Add(m);
+            ongoing.Add(m);
             m.Execute(this);
             return;
         }
@@ -210,7 +216,7 @@ public class ActionHandler : MonoBehaviour {
         if (low.Count > 0) {
             var l = low[0];
             Remove(l);
-            // ongoing.Add(l);
+            ongoing.Add(l);
             l.Execute(this);
         }
     }
