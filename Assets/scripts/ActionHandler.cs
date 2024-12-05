@@ -23,17 +23,17 @@ public class ActionHandler : MonoBehaviour {
     private static int ids;
     public int totalActions;
 
+    [SerializeField] public List<int> toFinish = new();
+
 
     // I don't know this is going to work . just don't want to look sorting function up for now
     private readonly Dictionary<Priority, List<IAction>> actions = new();
 
-
-    private readonly List<IAction> ongoing = new();
-    private readonly List<int> toFinish = new();
-
     private LayerMask layerMask;
 
-    private int ticks;
+
+    public List<IAction> ongoing = new();
+
 
     private void Start() {
         actions.Add(Priority.High, new List<IAction>());
@@ -41,8 +41,6 @@ public class ActionHandler : MonoBehaviour {
         actions.Add(Priority.Low, new List<IAction>());
 
         layerMask = LayerMask.GetMask("obstacles");
-
-        Debug.Log($"layer mask  {layerMask}");
 
 
         var render = GetComponent<Renderer>();
@@ -57,21 +55,20 @@ public class ActionHandler : MonoBehaviour {
     private void Update() {
         var l = Length();
 
-        // ticks++;
 
-
-        Debug.Log($"ongoing actions: {ongoing.Count}");
         foreach (var action in ongoing) action.Tick();
 
 
-        foreach (var action in toFinish) {
-            var index = actionIndex(ongoing, action);
+        foreach (var actionId in toFinish) {
+            var index = actionIndex(ongoing, actionId);
 
-            Assert.IsTrue(index >= 0, $"{action} not found in ongoing actions... was it cleared already?");
-            Done(action);
+            Assert.IsTrue(index >= 0, $"{actionId} not found in ongoing actions... was it cleared already?");
+            Done(actionId);
+
+            Assert.IsTrue(actionIndex(ongoing, actionId) == -1, "finished action should not still be in ongoing");
         }
 
-        toFinish.Clear();
+        toFinish = new List<int>();
         Assert.IsTrue(toFinish.Count == 0, $"everything should be finished, received {toFinish.Count}");
 
 
@@ -109,8 +106,6 @@ public class ActionHandler : MonoBehaviour {
     public void Add(IAction ac) {
         Assert.IsTrue(totalActions < 100, "Way more actions than i expected");
         Assert.IsTrue(toFinish.IndexOf(ac.GetId()) == -1, "cannot add something that is about to finish");
-
-        Debug.Log($"Adding the id {ac.GetId()}");
 
 
         var prio = ac.GetPriority();
@@ -157,6 +152,7 @@ public class ActionHandler : MonoBehaviour {
 
     public void ExecuteNow(IAction ac) {
         ongoing.Add(ac);
+
         ac.Execute(this);
     }
 
@@ -174,15 +170,15 @@ public class ActionHandler : MonoBehaviour {
         Assert.IsTrue(finishInd == -1, $"toFinish has duplicate items?, expected: -1, received: {finishInd}");
 
         toFinish.Add(actionId);
-        Done(actionId);
     }
 
     private void Done(int actionId) {
         var index = actionIndex(ongoing, actionId);
-        IAction action = null;
 
 
-        if (index != -1) action = ongoing[index];
+        var action = ongoing[index];
+
+        ongoing.RemoveAt(index);
 
         Assert.IsNotNull(action, "action was not found");
         Assert.IsTrue(index >= 0, "ongoing action was not found");
@@ -194,12 +190,10 @@ public class ActionHandler : MonoBehaviour {
             $"find action with different ids? expected:{actionId}, received{currentId}");
 
         var high = GetItems(Priority.High);
-
         if (high.Count > 0) {
             var h = high[0];
             Remove(h);
-            ongoing.Add(h);
-            h.Execute(this);
+            ExecuteNow(h);
             return;
         }
 
@@ -207,8 +201,7 @@ public class ActionHandler : MonoBehaviour {
         if (medium.Count > 0) {
             var m = medium[0];
             Remove(m);
-            ongoing.Add(m);
-            m.Execute(this);
+            ExecuteNow(m);
             return;
         }
 
@@ -216,8 +209,7 @@ public class ActionHandler : MonoBehaviour {
         if (low.Count > 0) {
             var l = low[0];
             Remove(l);
-            ongoing.Add(l);
-            l.Execute(this);
+            ExecuteNow(l);
         }
     }
 }
