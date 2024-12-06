@@ -1,215 +1,260 @@
 using System.Collections.Generic;
 using actions;
 using JetBrains.Annotations;
+using NUnit.Framework;
+using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
-using Assert = UnityEngine.Assertions.Assert;
 
-public enum Priority {
+public enum Priority
+{
     High = 1,
     Medium = 2,
     Low = 3
 }
 
-public interface IAction {
-    public Priority GetPriority();
 
-    public void Tick();
-    public int GetId();
-    public void Execute(ActionHandler handler);
+public enum ActionState
+{
+    Waiting = 0,
+    Running = 1,
+    Finishing = 2
 }
 
-public class ActionHandler : MonoBehaviour {
-    private static int ids;
-    public int totalActions;
+public enum ActionType
+{
+    Move = 0,
+    Idle = 1
+}
 
-    [SerializeField] public List<int> toFinish = new();
-
-
-    // I don't know this is going to work . just don't want to look sorting function up for now
-    private readonly Dictionary<Priority, List<IAction>> actions = new();
-
-    private LayerMask layerMask;
-
-
-    public List<IAction> ongoing = new();
-
-
-    private void Start() {
-        actions.Add(Priority.High, new List<IAction>());
-        actions.Add(Priority.Medium, new List<IAction>());
-        actions.Add(Priority.Low, new List<IAction>());
-
-        layerMask = LayerMask.GetMask("obstacles");
+public interface Action
+{
+    public ActionType GetType();
+    public Priority GetPriority();
+    public ActionState GetState();
+    public void SetState(ActionState newState);
+    public void Tick();
+    public int GetId();
+}
 
 
-        var render = GetComponent<Renderer>();
+public class ActionHandler : MonoBehaviour
+{
+    public int concurrentActions = 2;
+
+    public GameObject playerPos;
 
 
-        Add(new DebugAction(GetId(), Color.yellow, Priority.High, render));
-        Add(new AgentAction(GetId(), Priority.High, GetComponent<NavMeshAgent>(), new Vector3(0, -0.39519f, -11.95f),
-            layerMask));
-        Add(new DebugAction(GetId(), Color.red, Priority.Medium, render));
+    public GameObject highground;
+    public NavMeshLink highgroundLink;
+
+    private readonly List<Action> toFinish = new();
+    public Dictionary<int, Action> actions;
+
+    private bool addedHigh;
+
+    private NavMeshAgent agent;
+
+    private int ids;
+
+    private void Start()
+    {
+        actions = new Dictionary<int, Action>();
+
+
+        var r = GetComponent<Renderer>();
+        agent = GetComponent<NavMeshAgent>();
+        LayerMask obs = LayerMask.GetMask("obstacles");
+
+        addedHigh = false;
+        //
+        // Add(
+        //     new DebugAction(
+        //         GetId(),
+        //         Color.green,
+        //         Priority.High,
+        //         r,
+        //         this
+        //     )
+        // );
+        //
+        //
+        // Add(new AgentAction(
+        //     GetId(),
+        //     Priority.High,
+        //     agent,
+        //     Vector3.forward * 10,
+        //     obs,
+        //     this
+        // ));
+        //
+        // Add(
+        //     new DebugAction(
+        //         GetId(),
+        //         Color.blue,
+        //         Priority.High,
+        //         r,
+        //         this
+        //     )
+        // );
+        //
+        //
+        Add(new AgentAction(
+            GetId(),
+            Priority.High,
+            agent,
+            playerPos.transform.position,
+            obs,
+            this
+        ));
     }
 
-    private void Update() {
-        var l = Length();
+
+    private void Update()
+    {
+        Assert.IsTrue(toFinish.Count == 0, "didnt clear actions");
+        Assert.NotNull(agent, "did i forget to add this agent?");
 
 
-        foreach (var action in ongoing) action.Tick();
+        Debug.DrawLine(transform.position, highgroundLink.transform.position);
+        // if (Vector3.Distance(highgroundLink.transform.position - highgroundLink.startPoint, transform.position) <
+        //     9f &&
+        //     !addedHigh)
+        // {
+        //     ExecuteNow(
+        //         new HighGroundAction(
+        //             GetId(),
+        //             Priority.High,
+        //             ActionState.Waiting,
+        //             highground,
+        //             agent,
+        //             this
+        //         ), true
+        //     );
+        //     addedHigh = true;
+        //     Debug.Log("GOING");
+        // }
 
+        var running = RunningActions();
+        Assert.IsTrue(running <= concurrentActions,
+            $"got more running than allowed, expected: {concurrentActions}, got: {running}");
+        for (var i = running; i < concurrentActions; i++)
+        {
+            var next = GetNextAction();
 
-        foreach (var actionId in toFinish) {
-            var index = actionIndex(ongoing, actionId);
+            if (actions.Count > 0) Assert.IsNotNull(next, $"got next null when actions is {actions.Count}");
+            if (next == null) continue;
 
-            Assert.IsTrue(index >= 0, $"{actionId} not found in ongoing actions... was it cleared already?");
-            Done(actionId);
-
-            Assert.IsTrue(actionIndex(ongoing, actionId) == -1, "finished action should not still be in ongoing");
+            next.SetState(ActionState.Running);
         }
 
-        toFinish = new List<int>();
-        Assert.IsTrue(toFinish.Count == 0, $"everything should be finished, received {toFinish.Count}");
+
+        foreach (var action in actions.Values)
+        {
+            if (action.GetState() == ActionState.Running) action.Tick();
+
+            if (action.GetState() == ActionState.Finishing) toFinish.Add(action);
+        }
+
+        foreach (var action in toFinish) actions.Remove(action.GetId());
 
 
-        Assert.IsTrue(l >= 0, "length cannot be less than 0");
+        toFinish.Clear();
     }
 
-    private static int GetId() {
-        ids += 1;
-        return ids;
-    }
-
-
-    public int Length() {
-        return totalActions;
-    }
-
-
-    private static int actionIndex(List<IAction> actions, int id) {
-        for (var i = 0; i < actions.Count; i++)
-            if (actions[i].GetId() == id)
-                return i;
-
-        return -1;
-    }
-
-
-    private List<IAction> GetItems(Priority priority) {
-        actions.TryGetValue(priority, out var action);
-
-        Assert.IsNotNull(action, $"tried to get items for {priority} and came out null");
-
+    public Action GetAction(int id)
+    {
+        actions.TryGetValue(id, out var action);
+        Assert.NotNull(id, "tried to get an action that is null");
         return action;
     }
 
-    public void Add(IAction ac) {
-        Assert.IsTrue(totalActions < 100, "Way more actions than i expected");
-        Assert.IsTrue(toFinish.IndexOf(ac.GetId()) == -1, "cannot add something that is about to finish");
+    public void Finish(int id)
+    {
+        actions.TryGetValue(id, out var action);
+        Assert.NotNull(action, "action already removed");
+        Assert.IsTrue(action.GetState() != ActionState.Finishing,
+            "tried to finish an finishing action? do i want this");
 
 
-        var prio = ac.GetPriority();
-
-        actions.TryGetValue(prio, out var actionList);
-
-        Assert.IsNotNull(actionList, $"got null for priority: {prio}");
-
-
-        var hasSame = false;
-        actionList.ForEach(a => {
-            if (a.GetId() == ac.GetId()) hasSame = true;
-        });
-        Assert.IsFalse(hasSame, "has to have unique ids");
-
-
-        totalActions++;
-
-        if (ongoing.Count == 0) {
-            ExecuteNow(ac);
-            return;
-        }
-
-        actionList.Add(ac);
+        action.SetState(ActionState.Finishing);
     }
 
+    private int GetId()
+    {
+        return ++ids;
+    }
 
-    [CanBeNull]
-    public IAction Remove(IAction ac) {
-        var itemId = ac.GetId();
-        var items = GetItems(ac.GetPriority());
-        for (var i = 0; i < items.Count; i++)
-            if (items[i].GetId() == itemId) {
-                items.RemoveAt(i);
-                totalActions--;
-                Assert.IsTrue(totalActions >= 0, "cannot have a non negative value for actions");
-                return ac;
+    private void Stop(Action action)
+    {
+        actions.TryGetValue(action.GetId(), out var outAction);
+        Assert.IsNotNull(outAction, "trying to stop an action that is not in the list");
+
+        outAction.SetState(ActionState.Waiting);
+    }
+
+    private void ExecuteNow(Action action, bool force)
+    {
+        Assert.IsNotNull(action, "tryintg to initialize an null action?");
+
+
+        var toRemove = new List<Action>();
+        foreach (var curr in actions.Values)
+
+            if (curr.GetState() == ActionState.Running)
+            {
+                if (force)
+                    toRemove.Add(curr);
+                else
+                    action.SetState(ActionState.Waiting);
             }
 
-        Assert.IsTrue(1 == 2, "trying to remove something that does not exist?");
-        return null;
+        if (toRemove.Count > 0)
+            foreach (var curr in toRemove)
+                Remove(curr);
+
+        action.SetState(ActionState.Running);
+        actions.Add(action.GetId(), action);
     }
 
 
-    public void ExecuteNow(IAction ac) {
-        ongoing.Add(ac);
+    public int RunningActions()
+    {
+        var total = 0;
 
-        ac.Execute(this);
+        foreach (var action in actions.Values)
+            if (action.GetState() == ActionState.Running)
+                total++;
+
+        return total;
     }
 
-    public void Finish(int actionId) {
-        Debug.Log($"finishing {actionId}");
-        var ind = actionIndex(ongoing, actionId);
-
-
-        var action = ongoing[ind];
-        Assert.IsNotNull(action, $"action with an id {actionId} came out null");
-
-        Assert.IsTrue(actionId == action.GetId(), "just being protective");
-
-        var finishInd = toFinish.IndexOf(actionId);
-        Assert.IsTrue(finishInd == -1, $"toFinish has duplicate items?, expected: -1, received: {finishInd}");
-
-        toFinish.Add(actionId);
+    public void Remove(Action action)
+    {
+        actions.Remove(action.GetId());
     }
 
-    private void Done(int actionId) {
-        var index = actionIndex(ongoing, actionId);
+    private void Add(Action action)
+    {
+        Assert.IsFalse(actions.TryGetValue(action.GetId(), out var val), "action already in actions");
+        actions.Add(action.GetId(), action);
+    }
+
+    //Todo: this could be better?
+    [CanBeNull]
+    private Action GetNextAction()
+    {
+        Action next = null;
+        if (actions.Count == 0) return null;
 
 
-        var action = ongoing[index];
+        foreach (var action in actions.Values)
+        {
+            if (next == null) next = action;
 
-        ongoing.RemoveAt(index);
-
-        Assert.IsNotNull(action, "action was not found");
-        Assert.IsTrue(index >= 0, "ongoing action was not found");
-        var currentId = action.GetId();
-
-
-        Assert.IsTrue(totalActions >= 0, "cannot have a non negative value for actions");
-        Assert.IsTrue(actionId == action.GetId(),
-            $"find action with different ids? expected:{actionId}, received{currentId}");
-
-        var high = GetItems(Priority.High);
-        if (high.Count > 0) {
-            var h = high[0];
-            Remove(h);
-            ExecuteNow(h);
-            return;
+            if (action.GetPriority() > next.GetPriority() && action.GetState() == ActionState.Waiting) next = action;
         }
 
-        var medium = GetItems(Priority.Medium);
-        if (medium.Count > 0) {
-            var m = medium[0];
-            Remove(m);
-            ExecuteNow(m);
-            return;
-        }
-
-        var low = GetItems(Priority.Low);
-        if (low.Count > 0) {
-            var l = low[0];
-            Remove(l);
-            ExecuteNow(l);
-        }
+        return next;
     }
 }
