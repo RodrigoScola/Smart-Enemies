@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using actions;
+using System.Linq;
 using JetBrains.Annotations;
 using NUnit.Framework;
 using Unity.AI.Navigation;
@@ -29,7 +29,7 @@ public enum ActionType
 
 public interface Action
 {
-    public ActionType GetType();
+    public ActionType GetActionType();
     public Priority GetPriority();
     public ActionState GetState();
     public void SetState(ActionState newState);
@@ -42,98 +42,32 @@ public class ActionHandler : MonoBehaviour
 {
     public int concurrentActions = 2;
 
-    public GameObject playerPos;
 
-
-    public GameObject highground;
     public NavMeshLink highgroundLink;
 
     private readonly List<Action> toFinish = new();
-    public Dictionary<int, Action> actions;
 
-    private bool addedHigh;
+    // would be nice to have prefab actions
+    public Dictionary<int, Action> actions = new();
+
 
     private NavMeshAgent agent;
 
-    private int ids;
+    public static int ids;
 
     private void Start()
     {
-        actions = new Dictionary<int, Action>();
-
-
-        var r = GetComponent<Renderer>();
         agent = GetComponent<NavMeshAgent>();
-        LayerMask obs = LayerMask.GetMask("obstacles");
-
-        addedHigh = false;
-        //
-        // Add(
-        //     new DebugAction(
-        //         GetId(),
-        //         Color.green,
-        //         Priority.High,
-        //         r,
-        //         this
-        //     )
-        // );
-        //
-        //
-        // Add(new AgentAction(
-        //     GetId(),
-        //     Priority.High,
-        //     agent,
-        //     Vector3.forward * 10,
-        //     obs,
-        //     this
-        // ));
-        //
-        // Add(
-        //     new DebugAction(
-        //         GetId(),
-        //         Color.blue,
-        //         Priority.High,
-        //         r,
-        //         this
-        //     )
-        // );
-        //
-        //
-        Add(new AgentAction(
-            GetId(),
-            Priority.High,
-            agent,
-            playerPos.transform.position,
-            obs,
-            this
-        ));
     }
 
 
     private void Update()
     {
         Assert.IsTrue(toFinish.Count == 0, "didnt clear actions");
-        Assert.NotNull(agent, "did i forget to add this agent?");
+        Assert.NotNull(agent, "did i forget to add this ?");
 
 
         Debug.DrawLine(transform.position, highgroundLink.transform.position);
-        // if (Vector3.Distance(highgroundLink.transform.position - highgroundLink.startPoint, transform.position) <
-        //     9f &&
-        //     !addedHigh)
-        // {
-        //     ExecuteNow(
-        //         new HighGroundAction(
-        //             GetId(),
-        //             Priority.High,
-        //             ActionState.Waiting,
-        //             highground,
-        //             agent,
-        //             this
-        //         ), true
-        //     );
-        //     addedHigh = true;
-        //     Debug.Log("GOING");
-        // }
 
         var running = RunningActions();
         Assert.IsTrue(running <= concurrentActions,
@@ -180,10 +114,6 @@ public class ActionHandler : MonoBehaviour
         action.SetState(ActionState.Finishing);
     }
 
-    private int GetId()
-    {
-        return ++ids;
-    }
 
     private void Stop(Action action)
     {
@@ -234,10 +164,20 @@ public class ActionHandler : MonoBehaviour
         actions.Remove(action.GetId());
     }
 
-    private void Add(Action action)
+    public void Add(Action action)
     {
+        // Debug.Log(
+            // $"Adding action: {action.GetId()}, type: {action.GetActionType()}, state: {action.GetState()}, priority: {action.GetPriority()}, ");
+        
+        Assert.IsNotNull(action, "trying to initialize an null action?");
+
+        // is this hacky?
+        actions ??= new Dictionary<int, Action>();
+
         Assert.IsFalse(actions.TryGetValue(action.GetId(), out var val), "action already in actions");
         actions.Add(action.GetId(), action);
+
+        Assert.IsTrue(actions.Count > 0, "did not initialize any actions");
     }
 
     //Todo: this could be better?
