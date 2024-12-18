@@ -43,7 +43,6 @@ public class ActionHandler : MonoBehaviour
     public int concurrentActions = 2;
 
 
-    public NavMeshLink highgroundLink;
 
     private readonly List<Action> toFinish = new();
 
@@ -67,7 +66,6 @@ public class ActionHandler : MonoBehaviour
         Assert.NotNull(agent, "did i forget to add this ?");
 
 
-        Debug.DrawLine(transform.position, highgroundLink.transform.position);
 
         var running = RunningActions();
         Assert.IsTrue(running <= concurrentActions,
@@ -167,8 +165,8 @@ public class ActionHandler : MonoBehaviour
     public void Add(Action action)
     {
         // Debug.Log(
-            // $"Adding action: {action.GetId()}, type: {action.GetActionType()}, state: {action.GetState()}, priority: {action.GetPriority()}, ");
-        
+        // $"Adding action: {action.GetId()}, type: {action.GetActionType()}, state: {action.GetState()}, priority: {action.GetPriority()}, ");
+
         Assert.IsNotNull(action, "trying to initialize an null action?");
 
         // is this hacky?
