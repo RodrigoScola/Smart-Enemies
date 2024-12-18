@@ -27,7 +27,6 @@ namespace actions
         private readonly ActionHandler parentHandler;
 
         private Vector3 pos;
-        private readonly float radius = 10f;
         private ActionType _actionType;
         private ActionHandler[] enemies;
 
@@ -102,7 +101,8 @@ namespace actions
 
             Debug.DrawLine(parentHandler.transform.position, target, Color.yellow);
 
-            parentHandler.transform.position += force;
+            //todo reduce the force lol
+            parentHandler.transform.position += force / 200;
 
 
             var dist = Vector3.Distance(parentHandler.transform.position, target);
@@ -228,7 +228,7 @@ namespace actions
                     var actualDist = dist;
                     if (actualDist > 2f)
                     {
-                        Debug.Log("skipping because of distance");
+                        // Debug.Log($"skipping because of distance {actualDist}");
                         continue;
                     }
 
@@ -253,7 +253,7 @@ namespace actions
                     // Add distance-based dampening
                     float dampening = 0.8f * (2.0f - Mathf.Min(actualDist, 2.0f));
                     repellingStrength *= dampening;
-                    repellingStrength = Mathf.Clamp(repellingStrength, minRepelStrength, maxRepelStrength * 2.0f);
+                    repellingStrength = Mathf.Clamp(repellingStrength, minRepelStrength, maxRepelStrength);
 
 
 
@@ -264,6 +264,8 @@ namespace actions
                     Debug.DrawRay(parentHandler.transform.position, repellingDirection * repellingStrength, Color.red);
 
 
+
+                    Debug.Log($"repelling str: {repellingStrength}");
 
                     resultantVector += repellingDirection * Mathf.Max(repellingStrength, 0);
 
@@ -279,7 +281,7 @@ namespace actions
 
             }
 
-            foreach (var dir in contextMap) resultantVector += dir;
+            // foreach (var dir in contextMap) resultantVector += dir;
 
             // return resultantVector.normalized; // Normalize for consistent movement
             return resultantVector;

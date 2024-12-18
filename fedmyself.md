@@ -1,0 +1,1 @@
+-    if there is an error with positions. check the parent in the ui if their position is centered

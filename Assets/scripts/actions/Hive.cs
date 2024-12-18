@@ -44,8 +44,8 @@ namespace actions
         public static NavMeshPath GetPath(Vector3 start, Vector3 end)
         {
 
-            NavMeshPath path = new NavMeshPath();
-            NavMesh.CalculatePath(start, end, obstacles, path);
+            NavMeshPath path = new();
+            NavMesh.CalculatePath(start, end, NavMesh.AllAreas, path);
 
             return path;
         }
