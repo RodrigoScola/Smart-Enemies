@@ -20,7 +20,7 @@ public class HiveActionManager
     [SerializeField]
     private int ticks = 0;
 
-    public int maxPerBatch = 5;
+    public int maxPerBatch = 45;
 
     private List<BatchEnemies> batches = new();
 
@@ -41,7 +41,7 @@ public class HiveActionManager
         return null;
     }
 
-    private List<ActionEnemy> SortByDistance(Vector3 basePoint, ActionEnemy[] enemies)
+    private List<ActionEnemy> SortByDistance(Vector3 basePoint, List<ActionEnemy> enemies)
     {
         Dictionary<float, ActionEnemy> distances = new();
 
@@ -64,31 +64,31 @@ public class HiveActionManager
         BatchEnemies currentBatch = new();
         currentBatch.enemies = new();
 
-        var sorted = SortByDistance(Vector3.zero, enemies);
+        var sorted = SortByDistance(Vector3.zero, enemies.ToList());
 
         Assert.IsTrue(
             enemies.Length == sorted.Count,
             $"sorted enemies not equal, expected:{enemies.Length} got {sorted.Count}"
         );
 
-        for (int i = 0; i < sorted.Count; i++)
+        var currentEnemies = enemies.ToList();
+
+        while (currentEnemies.Count > 0)
         {
-            var enemy = sorted[i];
-            Assert.IsNotNull(enemy, "sorted enemy does not exist?");
-
-            currentBatch.enemies ??= new();
-            Assert.IsNotNull(currentBatch.enemies, "didnt init current batch correctly");
-
-            currentBatch.enemies.Add(enemy.GetId(), enemy);
+            var en = currentEnemies[0];
+            currentEnemies = SortByDistance(en.transform.position, currentEnemies);
+            currentBatch.enemies.Add(en.GetId(), en);
+            currentEnemies.RemoveAt(0);
 
             if (currentBatch.enemies.Count == maxPerBatch)
             {
-                currentBatches.Add(currentBatch);
+                batches.Add(currentBatch);
                 currentBatch = new();
+                currentBatch.enemies = new();
             }
         }
 
-        currentBatches.Add(currentBatch);
+        batches.Add(currentBatch);
     }
 
     public void Tick()
@@ -96,6 +96,26 @@ public class HiveActionManager
         //should prob replace this with a better alternative, maybe coroutines
         ticks++;
 
+        if (ticks % 50 == 0)
+        {
+            Batch(Hive.enemies, batches);
+            for (int i = 0; i < batches.Count; i++)
+            {
+                var enemies = batches[i].enemies;
+                Assert.IsTrue(
+                    enemies.Count <= maxPerBatch,
+                    $"there should be max {maxPerBatch} per batch, received: {enemies.Count}"
+                );
+
+                float hue = (float)i / batches.Count;
+                Color bcolor = Color.HSVToRGB(hue, 1f, 1f);
+
+                foreach (var en in enemies.Values)
+                {
+                    en.actions.Add(new DebugAction(Hive.GetId(), en, Priority.High, bcolor));
+                }
+            }
+        }
         Assert.IsTrue(Hive.enemies.Length > 0, "are you sure you dont want any enemies right now?");
         if (ticks < 10 || happened)
         {
@@ -111,12 +131,19 @@ public class HiveActionManager
             }
         }
         batches.Clear();
-        Batch(Hive.enemies, batches);
+        if (ticks % 10 == 0)
+        {
+            Batch(Hive.enemies, batches);
+        }
         Assert.IsTrue(batches.Count > 0, "no batch came out when batching");
 
         for (int i = 0; i < batches.Count; i++)
         {
-            Assert.IsTrue(batches[i].enemies.Count <= maxPerBatch, $"there should be max {maxPerBatch} per batch");
+            var enemies = batches[i].enemies;
+            Assert.IsTrue(
+                enemies.Count <= maxPerBatch,
+                $"there should be max {maxPerBatch} per batch, received: {enemies.Count}"
+            );
 
             float hue = (float)i / batches.Count;
             Color bcolor = Color.HSVToRGB(hue, 1f, 1f);
@@ -124,7 +151,7 @@ public class HiveActionManager
             var t = Hive.players[0];
             Assert.NotNull(t, "hardcoding player and found out...");
 
-            foreach (var en in batches[i].enemies.Values)
+            foreach (var en in enemies.Values)
             {
                 NavMeshPath p = GetAlternatePath(en.transform.position, t.transform.position, i);
 
