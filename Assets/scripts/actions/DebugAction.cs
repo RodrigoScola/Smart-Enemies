@@ -1,22 +1,18 @@
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
-using UnityEngine.Assertions;
-using Debug = UnityEngine.Debug;
 
 namespace actions
 {
     public class DebugAction : Action
     {
         private int _id;
-        private ActionHandler handler;
+        private ActionEnemy handler;
         private Color col;
         private ActionState state;
         private Renderer rend;
         private Priority _priority;
-        public DebugAction(int id, ActionHandler _handler,Priority prio, Color _col )
-        {
 
+        public DebugAction(int id, ActionEnemy _handler, Priority prio, Color _col)
+        {
             _id = id;
             handler = _handler;
             col = _col;
@@ -48,19 +44,20 @@ namespace actions
         public void Tick()
         {
             rend.material.color = col;
-            
-            handler.Finish(_id);
+            Finish();
         }
 
         public int GetId()
         {
             return _id;
         }
+
+        public void Finish()
+        {
+            if (state == ActionState.Running)
+            {
+                handler.actions.Finish(_id);
+            }
+        }
     }
-
-    
-
-
-
-
 }
