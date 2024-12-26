@@ -3,6 +3,7 @@ using System.Linq;
 using actions;
 using NUnit.Framework;
 using SmartEnemies;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -10,6 +11,19 @@ namespace SmartEnemies
 {
     public struct BatchEnemies
     {
+        private int id;
+
+        public int GetId()
+        {
+            return id;
+        }
+
+        public void SetId(int value)
+        {
+            Assert.IsTrue(id == 0, "cannot change an id of a batch");
+            id = value;
+        }
+
         public Dictionary<int, ActionEnemy> enemies;
     }
 }
@@ -22,23 +36,35 @@ public class HiveActionManager
 
     public int maxPerBatch = 45;
 
-    private List<BatchEnemies> batches = new();
+    private Dictionary<int, BatchEnemies> batches = new();
 
-    private bool happened;
+    private Dictionary<int, int> enemyBatches = new();
 
     //todo change this to a dictionary datastructure. this will prob do  for now
-    private BatchEnemies? GetEnemyBatch(int enemyId)
+    public BatchEnemies? GetEnemyBatch(int enemyId)
     {
-        foreach (BatchEnemies batch in batches)
-        {
-            if (batch.enemies.ContainsKey(enemyId))
-            {
-                return batch;
-            }
-        }
+        Assert.IsTrue(batches.Count > 0, "no batches yet. do i want this");
 
-        // Assert.True(false, "enemy is not in any batch. do i want this");
-        return null;
+        enemyBatches.TryGetValue(enemyId, out var batchId);
+
+        if (batchId == 0)
+        {
+            return null;
+        }
+        Assert.IsTrue(batches.ContainsKey(batchId), $"enemy thinks batch {batchId} exists");
+
+        batches.TryGetValue(batchId, out var batch);
+        Assert.NotNull(batch, "batch does not exist");
+        Assert.IsTrue(batch.enemies.ContainsKey(enemyId), "batch does not contain enemy");
+
+        return batch;
+    }
+
+    private BatchEnemies NewBatch()
+    {
+        BatchEnemies currentBatch = new() { enemies = new() };
+        currentBatch.SetId(Hive.GetId());
+        return currentBatch;
     }
 
     private List<ActionEnemy> SortByDistance(Vector3 basePoint, List<ActionEnemy> enemies)
@@ -51,44 +77,84 @@ public class HiveActionManager
             Assert.IsFalse(distances.ContainsKey(dist), "same distance on batching enemies?");
             distances.Add(dist, item);
         }
-        return distances.OrderBy(d => d.Key).Select(f => f.Value).ToList();
+        var result = distances.OrderBy(d => d.Key).Select(f => f.Value).ToList();
+        Assert.IsTrue(
+            result.Count == enemies.Count,
+            $"adding or removing more than expected, wanted {enemies.Count}, got {result.Count}"
+        );
+        return result;
     }
 
-    private void Batch(ActionEnemy[] enemies, List<BatchEnemies> currentBatches)
+    public void Batch(ActionEnemy[] enemies, Dictionary<int, BatchEnemies> currentBatches)
     {
         Assert.IsTrue(enemies.Length > 0, "batching empty amount of enemies");
         Assert.GreaterOrEqual(maxPerBatch, 1, "cannot have less than 1 per batch");
 
         currentBatches.Clear();
+        enemyBatches.Clear();
 
-        BatchEnemies currentBatch = new();
-        currentBatch.enemies = new();
+        BatchEnemies currentBatch = NewBatch();
 
-        var sorted = SortByDistance(Vector3.zero, enemies.ToList());
+        var sorted = SortByDistance(enemies[0].transform.position, enemies.ToList());
 
         Assert.IsTrue(
             enemies.Length == sorted.Count,
             $"sorted enemies not equal, expected:{enemies.Length} got {sorted.Count}"
         );
 
-        var currentEnemies = enemies.ToList();
+        Assert.IsTrue(enemyBatches.Count == 0, "didnt clear the enemy batches good enougth");
+        Assert.IsTrue(currentBatches.Count == 0, "didnt clear the batches good enougth");
 
-        while (currentEnemies.Count > 0)
+        while (sorted.Count > 0)
         {
-            var en = currentEnemies[0];
-            currentEnemies = SortByDistance(en.transform.position, currentEnemies);
+            var en = sorted[0];
+            sorted = SortByDistance(en.transform.position, sorted);
+
             currentBatch.enemies.Add(en.GetId(), en);
-            currentEnemies.RemoveAt(0);
+
+            enemyBatches.TryGetValue(en.GetId(), out var id);
+
+            Assert.IsFalse(
+                enemyBatches.ContainsKey(en.GetId()),
+                $"duplicate enemy ({en.GetId()}) on batching  index: {id}"
+            );
+
+            enemyBatches.Add(en.GetId(), currentBatch.GetId());
+            sorted.RemoveAt(0);
 
             if (currentBatch.enemies.Count == maxPerBatch)
             {
-                batches.Add(currentBatch);
-                currentBatch = new();
-                currentBatch.enemies = new();
+                batches.Add(currentBatch.GetId(), currentBatch);
+                currentBatch = NewBatch();
             }
         }
 
-        batches.Add(currentBatch);
+        batches.Add(currentBatch.GetId(), currentBatch);
+    }
+
+    public void Rebatch()
+    {
+        Batch(Hive.enemies, batches);
+        Assert.IsTrue(batches.Count > 0, $"no batches came out, even with {Hive.enemies.Length}");
+
+        int batchIdx = 0;
+        foreach (var batch in batches.Values)
+        {
+            var enemies = batch.enemies;
+            Assert.IsTrue(
+                enemies.Count <= maxPerBatch,
+                $"there should be max {maxPerBatch} per batch, received: {enemies.Count}"
+            );
+
+            float hue = (float)batchIdx / batches.Count;
+            Color bcolor = Color.HSVToRGB(hue, 1f, 1f);
+
+            foreach (var en in enemies.Values)
+            {
+                en.actions.Add(new DebugAction(Hive.GetId(), en, Priority.High, bcolor));
+            }
+            batchIdx++;
+        }
     }
 
     public void Tick()
@@ -96,99 +162,18 @@ public class HiveActionManager
         //should prob replace this with a better alternative, maybe coroutines
         ticks++;
 
-        if (ticks % 50 == 0)
+        if (ticks % 100 == 0)
         {
-            Batch(Hive.enemies, batches);
-            for (int i = 0; i < batches.Count; i++)
+            Rebatch();
+        }
+        foreach (var batch in batches.Values)
+        {
+            foreach (var en in batch.enemies.Values)
             {
-                var enemies = batches[i].enemies;
-                Assert.IsTrue(
-                    enemies.Count <= maxPerBatch,
-                    $"there should be max {maxPerBatch} per batch, received: {enemies.Count}"
-                );
-
-                float hue = (float)i / batches.Count;
-                Color bcolor = Color.HSVToRGB(hue, 1f, 1f);
-
-                foreach (var en in enemies.Values)
-                {
-                    en.actions.Add(new DebugAction(Hive.GetId(), en, Priority.High, bcolor));
-                }
+                en.Tick();
             }
         }
+
         Assert.IsTrue(Hive.enemies.Length > 0, "are you sure you dont want any enemies right now?");
-        if (ticks < 10 || happened)
-        {
-            return;
-        }
-
-        happened = true;
-        foreach (var enemy in Hive.enemies)
-        {
-            foreach (var ac in enemy.actions.Actions().Values)
-            {
-                enemy.actions.Remove(ac);
-            }
-        }
-        batches.Clear();
-        if (ticks % 10 == 0)
-        {
-            Batch(Hive.enemies, batches);
-        }
-        Assert.IsTrue(batches.Count > 0, "no batch came out when batching");
-
-        for (int i = 0; i < batches.Count; i++)
-        {
-            var enemies = batches[i].enemies;
-            Assert.IsTrue(
-                enemies.Count <= maxPerBatch,
-                $"there should be max {maxPerBatch} per batch, received: {enemies.Count}"
-            );
-
-            float hue = (float)i / batches.Count;
-            Color bcolor = Color.HSVToRGB(hue, 1f, 1f);
-
-            var t = Hive.players[0];
-            Assert.NotNull(t, "hardcoding player and found out...");
-
-            foreach (var en in enemies.Values)
-            {
-                NavMeshPath p = GetAlternatePath(en.transform.position, t.transform.position, i);
-
-                Assert.IsTrue(p.corners.Length > 0, "invalid path on batching");
-
-                Assert.IsTrue(en.actions.RunningActions().Count == 0, $"still have an running action on {en.GetId()}");
-
-                en.actions.ExecuteNow(new MoveAction(Hive.GetId(), en, Priority.High, p), true);
-
-                en.actions.Add(new DebugAction(Hive.GetId(), en, Priority.High, bcolor));
-            }
-        }
-    }
-
-    private NavMeshPath GetAlternatePath(Vector3 start, Vector3 end, int batchIndex)
-    {
-        NavMeshPath path = new NavMeshPath();
-        Vector3 midPoint;
-
-        int times = 0;
-        do
-        {
-            float offset = (batchIndex % 2 == 0) ? 10f + times : -10f + times;
-            midPoint = Vector3.Lerp(start, end, 0.5f) + new Vector3(offset, 0, offset);
-
-            NavMesh.CalculatePath(start, midPoint, NavMesh.AllAreas, path);
-            NavMesh.CalculatePath(midPoint, end, NavMesh.AllAreas, path);
-
-            if (path.corners.Length > 0)
-            {
-                return path;
-            }
-
-            NavMesh.CalculatePath(start, end, NavMesh.AllAreas, path);
-            Assert.IsTrue(path.corners.Length > 0, "invalid path");
-            times++;
-        } while (path.corners.Length == 0 && times < 10);
-        return path;
     }
 }

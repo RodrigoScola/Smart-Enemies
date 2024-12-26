@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using SmartEnemies;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -14,6 +15,14 @@ public class ActionEnemy : MonoBehaviour
     {
         _id = Hive.GetId();
         actions = new ActionHandler(this);
+    }
+
+    public BatchEnemies GetBatch()
+    {
+        var batch = Hive.Manager.GetEnemyBatch(_id);
+        Assert.IsNotNull(batch, "did not batch enemy yet");
+
+        return (BatchEnemies)batch;
     }
 
     public int GetId()
@@ -38,6 +47,10 @@ public class ActionEnemy : MonoBehaviour
     {
         Assert.NotNull(agent, "did i forget to add this ?");
         Assert.NotNull(actions, "forgot to init actions?");
+    }
+
+    public void Tick()
+    {
         actions.Tick();
     }
 }
