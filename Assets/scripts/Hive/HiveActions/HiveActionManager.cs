@@ -67,17 +67,14 @@ public class HiveActionManager
 
             currentBatch.enemies.Add(enemy.GetId(), enemy);
 
-            if (enemy.GetId() == 68)
-            {
-                Debug.Log("adding enemy to batch");
-            }
-
             if (currentBatch.enemies.Count == maxPerBatch)
             {
                 currentBatches.Add(currentBatch);
                 currentBatch = new();
             }
         }
+
+        currentBatches.Add(currentBatch);
     }
 
     public void Tick()
@@ -86,32 +83,28 @@ public class HiveActionManager
         ticks++;
 
         Assert.IsTrue(Hive.enemies.Length > 0, "are you sure you dont want any enemies right now?");
-        if (ticks < 50 || happened)
+        if (ticks < 10 || happened)
         {
             return;
         }
+
+        happened = true;
         foreach (var enemy in Hive.enemies)
         {
-            if (enemy.GetId() == 68)
-            {
-                var ac = enemy.actions.Actions();
-                Debug.Log($"removing {ac.Count} actiions");
-            }
-
             foreach (var ac in enemy.actions.Actions().Values)
             {
                 enemy.actions.Remove(ac);
             }
-            Assert.IsTrue(enemy.actions.Actions().Count == 0, "did not correctly remove all the actions");
         }
         batches.Clear();
         Batch(Hive.enemies, batches);
+        Assert.IsTrue(batches.Count > 0, "no batch came out when batching");
 
         for (int i = 0; i < batches.Count; i++)
         {
             Assert.IsTrue(batches[i].enemies.Count <= maxPerBatch, $"there should be max {maxPerBatch} per batch");
 
-            float hue = (float)i / batches.Count;
+            float hue = (float)i / Hive.enemies.Length;
             Color bcolor = Color.HSVToRGB(hue, 1f, 1f);
 
             var t = Hive.players[0];
@@ -123,12 +116,13 @@ public class HiveActionManager
 
                 Assert.IsTrue(p.corners.Length > 0, "invalid path on batching");
 
-                en.actions.Add(new MoveAction(Hive.GetId(), en, Priority.High, p));
+                Assert.IsTrue(en.actions.RunningActions().Count == 0, $"still have an running action on {en.GetId()}");
+
+                en.actions.ExecuteNow(new MoveAction(Hive.GetId(), en, Priority.High, p), true);
+
                 en.actions.Add(new DebugAction(Hive.GetId(), en, Priority.High, bcolor));
             }
         }
-
-        happened = true;
     }
 
     private NavMeshPath GetAlternatePath(Vector3 start, Vector3 end, int batchIndex)

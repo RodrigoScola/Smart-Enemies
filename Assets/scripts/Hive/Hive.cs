@@ -63,14 +63,14 @@ public class Hive : MonoBehaviour
     private static void MovePoints(ActionEnemy handler, List<GameObject> p)
     {
         Assert.IsTrue(p.Count > 0, "there are no points to be initted");
-        Assert.IsFalse(movedIds.Contains(handler.GetId()), $"this should be only executed once, got {handler.GetId()}");
         movedIds.Add(handler.GetId());
+
+        handler.actions.Add(new ScanAction(GetId(), handler, Priority.Low));
+        handler.actions.Add(new DebugAction(GetId(), handler, Priority.Medium, Color.green));
 
         for (int i = 0; i < p.Count; i++)
         {
             var point = p[i];
-
-            handler.actions.Add(new ScanAction(GetId(), handler, Priority.Low));
 
             handler.actions.Add(
                 new MoveAction(
@@ -81,8 +81,6 @@ public class Hive : MonoBehaviour
                     Hive.GetPath(handler.transform.position, point.transform.position)
                 )
             );
-
-            handler.actions.Add(new DebugAction(GetId(), handler, Priority.Medium, Color.green));
         }
 
         Assert.IsTrue(handler.actions.Actions().Count > 0, "no actions were actually initialized");

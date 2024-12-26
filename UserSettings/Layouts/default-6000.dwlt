@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1904
     height: 988
   m_ShowMode: 4
-  m_Title: Scene
+  m_Title: Game
   m_RootView: {fileID: 8}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -65,9 +65,9 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 265
+    x: 297
     y: 0
-    width: 666
+    width: 634
     height: 709
   m_MinSize: {x: 52, y: 76}
   m_MaxSize: {x: 4002, y: 4026}
@@ -145,7 +145,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 265
+    width: 297
     height: 709
   m_MinSize: {x: 201, y: 226}
   m_MaxSize: {x: 4001, y: 4026}
@@ -326,9 +326,9 @@ MonoBehaviour:
     m_TextWithWhitespace: "Scene\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 266
+    x: 298
     y: 24
-    width: 664
+    width: 632
     height: 683
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -800,9 +800,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 8.934087, y: -12.905712, z: 26.68642}
+    m_Target: {x: -8.284487, y: 11.156673, z: 19.374527}
     speed: 2
-    m_Value: {x: 8.934087, y: -12.905712, z: 26.68642}
+    m_Value: {x: -8.284487, y: 11.156673, z: 19.374527}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -835,7 +835,7 @@ MonoBehaviour:
         m_Value: 0
       m_Color: {r: 0.5, g: 0.5, b: 0.5, a: 0.4}
       m_Pivot: {x: 0, y: 0, z: 0}
-      m_Size: {x: 1, y: 1}
+      m_Size: {x: 0.5, y: 0.5}
     zGrid:
       m_Fade:
         m_Target: 0
@@ -848,13 +848,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.40985414, y: 0.02670227, z: -0.011545755, w: 0.9118744}
+    m_Target: {x: 0.24397999, y: 0.75302935, z: -0.38680992, w: 0.47344688}
     speed: 2
-    m_Value: {x: -0.40985414, y: -0.026702268, z: 0.011545754, w: -0.91187435}
+    m_Value: {x: 0.24397998, y: 0.75302935, z: -0.38680992, w: 0.47344688}
   m_Size:
-    m_Target: 27.538952
+    m_Target: 19.489502
     speed: 2
-    m_Value: 27.538952
+    m_Value: 19.489502
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1110,7 +1110,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 24
-    width: 264
+    width: 296
     height: 683
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -1125,10 +1125,10 @@ MonoBehaviour:
     m_OverlaysVisible: 1
   m_SceneHierarchy:
     m_TreeViewState:
-      scrollPos: {x: 0, y: 64}
+      scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: fcfaffffa6a90000
+      m_ExpandedIDs: fcfaffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 

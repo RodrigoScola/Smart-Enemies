@@ -17,14 +17,13 @@ namespace actions
         private readonly int id;
         private readonly ActionEnemy parentHandler;
 
-        public float maxRepelStrength = 1000f;
-        public float minRepelStrength = 1f;
+        public float maxRepelStrength = 1f;
+        public float minRepelStrength = 0.1f;
+        public float repelStrength = 0.5f;
 
         private NavMeshPath path;
 
         private int posIndex;
-
-        public float repelStrength = 2f;
 
         public int size = 32; // Higher resolution for finer gradient
 
@@ -49,32 +48,23 @@ namespace actions
         public void Tick()
         {
             Assert.IsNotNull(path, "trying to move to undefined path");
-            if (posIndex < path.corners.Length)
+            var acts = parentHandler.actions.RunningActions();
+
+            Assert.IsTrue(acts.Contains(this), "executing running action that is not running");
+
+            Vector3 target = path.corners[posIndex];
+            if (posIndex < path.corners.Length && !agent.destination.Equals(target))
             {
-                var newPos = path.corners[posIndex];
-                // agent.SetDestination(newPos);
+                agent.SetDestination(target);
             }
 
             Assert.IsNotNull(path, "should path be null?");
             Assert.IsTrue(path.corners.Length > 0, "was given an invalid path");
 
-            Vector3 target = path.corners[posIndex];
-            // var force = ComputeContextSteering(target);
-
-            // Debug.DrawLine(parentHandler.transform.position, target, Color.yellow);
-            // Debug.DrawLine(parentHandler.transform.position, agent.nextPosition, Color.yellow);
-
             // var force = ComputeContextSteering(target);
 
             //todo reduce the force lol
-            // if (parentHandler.GetId() == 1044)
-            // {
-            //     parentHandler.transform.position += force / 40;
-            // }
-            // else
-            // {
-            //     parentHandler.transform.position += force / 200;
-            // }
+            // parentHandler.transform.position += force;
 
             var dist = Vector3.Distance(parentHandler.transform.position, target);
 
@@ -140,38 +130,38 @@ namespace actions
 
             Vector3 closestDir = Movement.To(parentPos, target, contextMap);
 
-            foreach (var friend in Hive.enemies)
-            {
-                var friendPos = friend.transform.position;
+            // foreach (var friend in Hive.enemies)
+            // {
+            //     var friendPos = friend.transform.position;
 
-                var dist = Vector3.Distance(parentPos, friendPos);
-                if (dist > 2f)
-                {
-                    // Debug.Log($"skipping because of distance {actualDist}");
-                    break;
-                }
+            //     var dist = Vector3.Distance(parentPos, friendPos);
+            //     if (dist > 2f)
+            //     {
+            //         // Debug.Log($"skipping because of distance {actualDist}");
+            //         break;
+            //     }
 
-                if (friend.Equals(parentHandler))
-                {
-                    // Debug.Log($"skippig cus same");
-                    continue;
-                }
-                closestDir += Movement.Repel(
-                    dist,
-                    parentPos,
-                    friendPos,
-                    repelStrength,
-                    minRepelStrength,
-                    maxRepelStrength
-                );
-            }
+            //     if (friend.Equals(parentHandler))
+            //     {
+            //         // Debug.Log($"skippig cus same");
+            //         continue;
+            //     }
+            //     closestDir += Movement.Repel(
+            //         dist,
+            //         parentPos,
+            //         friendPos,
+            //         repelStrength,
+            //         minRepelStrength,
+            //         maxRepelStrength
+            //     );
+            // }
 
             var dir = parentPos - target;
 
-            if (Physics.Raycast(parentPos, dir * 7f, out var hit, 7f, Hive.EnemyMask))
-            {
-                closestDir += Vector3.right * 10000;
-            }
+            // if (Physics.Raycast(parentPos, dir * 7f, out var hit, 7f, Hive.EnemyMask))
+            // {
+            //     closestDir += Vector3.right * 10000;
+            // }
 
             return closestDir;
         }
