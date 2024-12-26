@@ -26,15 +26,28 @@ public class HiveActionManager
 
     private bool happened;
 
-    private List<ActionEnemy> SortByDistance(ActionEnemy[] enemies)
+    //todo change this to a dictionary datastructure. this will prob do  for now
+    private BatchEnemies? GetEnemyBatch(int enemyId)
     {
-        var baseDistance = Vector3.zero;
+        foreach (BatchEnemies batch in batches)
+        {
+            if (batch.enemies.ContainsKey(enemyId))
+            {
+                return batch;
+            }
+        }
 
+        // Assert.True(false, "enemy is not in any batch. do i want this");
+        return null;
+    }
+
+    private List<ActionEnemy> SortByDistance(Vector3 basePoint, ActionEnemy[] enemies)
+    {
         Dictionary<float, ActionEnemy> distances = new();
 
         foreach (var item in enemies)
         {
-            var dist = Vector3.Distance(baseDistance, item.transform.position);
+            var dist = Vector3.Distance(basePoint, item.transform.position);
             Assert.IsFalse(distances.ContainsKey(dist), "same distance on batching enemies?");
             distances.Add(dist, item);
         }
@@ -49,8 +62,9 @@ public class HiveActionManager
         currentBatches.Clear();
 
         BatchEnemies currentBatch = new();
+        currentBatch.enemies = new();
 
-        var sorted = SortByDistance(enemies);
+        var sorted = SortByDistance(Vector3.zero, enemies);
 
         Assert.IsTrue(
             enemies.Length == sorted.Count,
@@ -104,7 +118,7 @@ public class HiveActionManager
         {
             Assert.IsTrue(batches[i].enemies.Count <= maxPerBatch, $"there should be max {maxPerBatch} per batch");
 
-            float hue = (float)i / Hive.enemies.Length;
+            float hue = (float)i / batches.Count;
             Color bcolor = Color.HSVToRGB(hue, 1f, 1f);
 
             var t = Hive.players[0];
