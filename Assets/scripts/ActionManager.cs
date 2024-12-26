@@ -35,6 +35,7 @@ public interface Action
     public ActionState GetState();
     public void SetState(ActionState newState);
     public void Tick();
+    public void Run();
     public int GetId();
     public void Finish();
 }
@@ -143,7 +144,9 @@ public class ActionHandler
             // Debug.Log($"adding new action, running {running}, total: {_actions.Count}");
 
             next.SetState(ActionState.Running);
-            runningActionTypes.TryAdd(next.GetActionType(), next.GetId());
+            var result = runningActionTypes.TryAdd(next.GetActionType(), next.GetId());
+            Assert.IsTrue(result, "could not add action to running?");
+            next.Run();
         }
 
         foreach (var action in _actions.Values)
@@ -234,7 +237,6 @@ public class ActionHandler
         foreach (var actionId in runningActionTypes.Values)
         {
             _actions.TryGetValue(actionId, out var action);
-            Assert.IsNotNull(action, $"action {action}  was removed and not cleared from running actions");
             Assert.IsTrue(action.GetState() == ActionState.Running, "running action that is not running");
 
             total.Add(action);
@@ -302,8 +304,7 @@ public class ActionHandler
             if (runningActionTypes.ContainsKey(action.GetActionType()))
                 continue;
 
-            if (next == null)
-                next = action;
+            next ??= action;
 
             if (action.GetPriority() > next.GetPriority() && action.GetState() == ActionState.Waiting)
                 next = action;

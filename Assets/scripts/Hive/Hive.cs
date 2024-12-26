@@ -60,7 +60,7 @@ public class Hive : MonoBehaviour
         {
             positions.TryGetValue(enemy.GetBatch()!.GetId(), out var pos);
 
-            MovePoints(enemy, new Vector3[] { pos });
+            MovePoints(enemy, gamePoints);
         }
     }
 
@@ -100,21 +100,25 @@ public class Hive : MonoBehaviour
         manager.Tick();
     }
 
-    private static void MovePoints(ActionEnemy handler, Vector3[] p)
+    private static void MovePoints(ActionEnemy handler, List<GameObject> p)
     {
-        Assert.IsTrue(p.Length > 0, "there are no points to be initted");
+        Assert.IsTrue(p.Count > 0, "there are no points to be initted");
 
         // handler.actions.Add(new ScanAction(GetId(), handler, Priority.Low));
         handler.actions.Add(new DebugAction(GetId(), handler, Priority.Medium, Color.green));
 
-        for (int i = 0; i < p.Length; i++)
+        for (int i = 0; i < p.Count; i++)
         {
             var point = p[i];
             BatchEnemies? batch = Manager.GetEnemyBatch(handler.GetId());
 
             Assert.IsTrue(batch.HasValue, "didnt batch the enemy yet");
 
-            NavMeshPath path = Hive.GetAlternatePath(handler.transform.position, point, batch.Value.GetId());
+            NavMeshPath path = Hive.GetAlternatePath(
+                handler.transform.position,
+                point.transform.position,
+                batch.Value.GetId()
+            );
 
             Assert.IsTrue(path.corners.Length > 0, "invalid path on batching");
 

@@ -83,4 +83,6 @@ public class ScanAction : Action
             }
         }
     }
+
+    public void Run() { }
 }

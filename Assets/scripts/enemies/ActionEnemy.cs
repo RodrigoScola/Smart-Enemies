@@ -45,8 +45,8 @@ public class ActionEnemy : MonoBehaviour
 
     private void Update()
     {
-        Assert.NotNull(agent, "did i forget to add this ?");
-        Assert.NotNull(actions, "forgot to init actions?");
+        // Assert.NotNull(agent, "did i forget to add this ?");
+        // Assert.NotNull(actions, "forgot to init actions?");
     }
 
     public void Tick()

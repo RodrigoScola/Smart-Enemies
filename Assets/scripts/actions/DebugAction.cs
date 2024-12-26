@@ -41,11 +41,7 @@ namespace actions
             state = newState;
         }
 
-        public void Tick()
-        {
-            rend.material.color = col;
-            Finish();
-        }
+        public void Tick() { }
 
         public int GetId()
         {
@@ -58,6 +54,12 @@ namespace actions
             {
                 handler.actions.Finish(_id);
             }
+        }
+
+        public void Run()
+        {
+            rend.material.color = col;
+            Finish();
         }
     }
 }

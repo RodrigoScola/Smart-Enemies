@@ -77,4 +77,6 @@ public class FollowAction : Action
 
         _agent.SetPath(_path);
     }
+
+    public void Run() { }
 }

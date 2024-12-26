@@ -1,22 +1,35 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Movement", menuName = "Scriptable Objects/Movement")]
 public class Movement : ScriptableObject
 {
-    public static void ResetContextMap(Vector3[] contextMap, int size)
+    private static Dictionary<int, Vector3[]> contextSizes = new();
+
+    public static void ResetContextMap(out Vector3[] contextMap, int size)
     {
-        Assert.IsTrue(contextMap.Length == size, "mismatched size on resetting the context");
+        if (contextSizes.ContainsKey(size))
+        {
+            contextSizes.TryGetValue(size, out contextMap);
+            return;
+        }
+
+        // Assert.IsTrue(contextMap.Length == size, "mismatched size on resetting the context");
         var angleIncrement = 360f / size;
+
+        Vector3[] maps = new Vector3[size];
 
         for (var i = 0; i < size; i++)
         {
             var angle = i * angleIncrement * Mathf.Deg2Rad;
 
-            contextMap[i].x = Mathf.Cos(angle);
-            contextMap[i].y = 0;
-            contextMap[i].z = Mathf.Sin(angle);
+            maps[i].x = Mathf.Cos(angle);
+            maps[i].y = 0;
+            maps[i].z = Mathf.Sin(angle);
         }
+        contextSizes.Add(size, maps);
+        contextMap = maps;
     }
 
     public static Vector3[] MakeContextMap(int size)
