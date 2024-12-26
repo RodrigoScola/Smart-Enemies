@@ -41,9 +41,26 @@ public class Hive : MonoBehaviour
         Assert.IsTrue(Hive.enemies.Length > 0, "you forgot to init enemies");
         Debug.Log($"hive initialized, enemies: {Hive.enemies.Length}");
 
+        var batches = manager.Batches();
+
+        var angleIncrement = 360f / batches.Count;
+
+        Dictionary<int, Vector3> positions = new();
+
+        for (var i = 0; i < batches.Count; i++)
+        {
+            var angle = i * angleIncrement * Mathf.Deg2Rad;
+
+            var pos = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
+            positions.Add(batches[i].GetId(), pos * 20f);
+            Visual.Sphere(pos * 10f, 1f);
+        }
+
         foreach (var enemy in enemies)
         {
-            // MovePoints(enemy, gamePoints);
+            positions.TryGetValue(enemy.GetBatch()!.GetId(), out var pos);
+
+            MovePoints(enemy, new Vector3[] { pos });
         }
     }
 
@@ -62,32 +79,46 @@ public class Hive : MonoBehaviour
 
     private void Update()
     {
+        //todo: remove this once were not just testing anymore
+        if (Hive.enemies is null)
+        {
+            Hive.enemies = FindObjectsByType<ActionEnemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+                .GroupBy(f => f.GetId())
+                .Select(f => f.First())
+                .ToArray();
+        }
+        var b = Hive.Manager.Batches();
+        Assert.IsTrue(b.Count > 0, "no batch found");
+        // for (var i = 0; i < b.Count; i++)
+        // {
+        //     var angle = i * (360f / b.Count) * Mathf.Deg2Rad;
+
+        //     var pos = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
+        //     Visual.Sphere(pos * 30f, 1f);
+        // }
+
         manager.Tick();
     }
 
-    private static void MovePoints(ActionEnemy handler, List<GameObject> p)
+    private static void MovePoints(ActionEnemy handler, Vector3[] p)
     {
-        Assert.IsTrue(p.Count > 0, "there are no points to be initted");
+        Assert.IsTrue(p.Length > 0, "there are no points to be initted");
 
         // handler.actions.Add(new ScanAction(GetId(), handler, Priority.Low));
         handler.actions.Add(new DebugAction(GetId(), handler, Priority.Medium, Color.green));
 
-        for (int i = 0; i < p.Count; i++)
+        for (int i = 0; i < p.Length; i++)
         {
             var point = p[i];
             BatchEnemies? batch = Manager.GetEnemyBatch(handler.GetId());
 
             Assert.IsTrue(batch.HasValue, "didnt batch the enemy yet");
 
-            NavMeshPath path = Hive.GetAlternatePath(
-                handler.transform.position,
-                point.transform.position,
-                batch.Value.GetId()
-            );
+            NavMeshPath path = Hive.GetAlternatePath(handler.transform.position, point, batch.Value.GetId());
 
             Assert.IsTrue(path.corners.Length > 0, "invalid path on batching");
 
-            handler.actions.Add(new FollowAction(Hive.GetId(), handler, Priority.High, point));
+            handler.actions.Add(new MoveAction(Hive.GetId(), handler, Priority.High, path));
 
             // handler.actions.Add(new DebugAction(Hive.GetId(), handler, Priority.High, bcolor));
         }

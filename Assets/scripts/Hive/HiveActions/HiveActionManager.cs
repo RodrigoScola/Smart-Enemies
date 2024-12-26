@@ -36,9 +36,16 @@ public class HiveActionManager
 
     public int maxPerBatch = 45;
 
-    private Dictionary<int, BatchEnemies> batches = new();
+    Dictionary<int, BatchEnemies> batches = new();
 
     private Dictionary<int, int> enemyBatches = new();
+
+    public List<BatchEnemies> Batches()
+    {
+        Assert.IsTrue(batches.Count > 0, "not batched yet");
+        //do i want this
+        return batches.Values.ToList();
+    }
 
     //todo change this to a dictionary datastructure. this will prob do  for now
     public BatchEnemies? GetEnemyBatch(int enemyId)
@@ -164,7 +171,7 @@ public class HiveActionManager
 
         if (ticks % 100 == 0)
         {
-            Rebatch();
+            // Rebatch();
         }
         foreach (var batch in batches.Values)
         {
@@ -173,6 +180,7 @@ public class HiveActionManager
                 en.Tick();
             }
         }
+        Assert.IsNotNull(Hive.enemies, "you didnt initialize enemies? how did it get past all the errors");
 
         Assert.IsTrue(Hive.enemies.Length > 0, "are you sure you dont want any enemies right now?");
     }
