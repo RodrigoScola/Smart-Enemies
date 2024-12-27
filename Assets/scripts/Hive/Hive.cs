@@ -53,14 +53,13 @@ public class Hive : MonoBehaviour
 
             var pos = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
             positions.Add(batches[i].GetId(), pos * 20f);
-            Visual.Sphere(pos * 10f, 1f);
         }
 
         foreach (var enemy in enemies)
         {
             positions.TryGetValue(enemy.GetBatch()!.GetId(), out var pos);
 
-            MovePoints(enemy, gamePoints);
+            MoveToPosition(enemy, pos);
         }
     }
 
@@ -98,6 +97,26 @@ public class Hive : MonoBehaviour
         // }
 
         manager.Tick();
+    }
+
+    private static void MoveToPosition(ActionEnemy handler, Vector3 position)
+    {
+        // handler.actions.Add(new ScanAction(GetId(), handler, Priority.Low));
+        handler.actions.Add(new DebugAction(GetId(), handler, Priority.Medium, Color.green));
+
+        BatchEnemies? batch = Manager.GetEnemyBatch(handler.GetId());
+
+        Assert.IsTrue(batch.HasValue, "didnt batch the enemy yet");
+
+        NavMeshPath path = Hive.GetAlternatePath(handler.transform.position, position, batch.Value.GetId());
+
+        Assert.IsTrue(path.corners.Length > 0, "invalid path on batching");
+
+        handler.actions.Add(new MoveAction(Hive.GetId(), handler, Priority.High, path));
+
+        // handler.actions.Add(new DebugAction(Hive.GetId(), handler, Priority.High, bcolor));
+
+        Assert.IsTrue(handler.actions.Actions().Count > 0, "no actions were actually initialized");
     }
 
     private static void MovePoints(ActionEnemy handler, List<GameObject> p)
@@ -150,9 +169,9 @@ public class Hive : MonoBehaviour
             }
 
             NavMesh.CalculatePath(start, end, NavMesh.AllAreas, path);
-            Assert.IsTrue(path.corners.Length > 0, "invalid path");
             times++;
         } while (path.corners.Length == 0 && times < 10);
+        // Assert.IsTrue(path.corners.Length > 0, "invalid path");
         return path;
     }
 }

@@ -84,6 +84,6 @@ public class Movement : ScriptableObject
 
         // Debug.DrawRay(start, repellingDirection * repellingStrength, Color.red);
 
-        return repellingDirection * Mathf.Max(repellingStrength, 0);
+        return repellingDirection.normalized * Mathf.Max(repellingStrength, 0);
     }
 }

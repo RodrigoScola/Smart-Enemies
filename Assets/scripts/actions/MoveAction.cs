@@ -62,10 +62,10 @@ namespace actions
             Assert.IsNotNull(path, "should path be null?");
             Assert.IsTrue(path.corners.Length > 0, "was given an invalid path");
 
-            var force = ComputeContextSteering(target);
+            // var force = ComputeContextSteering(target);
 
             //todo reduce the force lol
-            parentHandler.transform.position = force;
+            // parentHandler.transform.position = force;
 
             var dist = Vector3.Distance(parentHandler.transform.position, target);
 
@@ -132,33 +132,28 @@ namespace actions
             // Vector3 closestDir = Movement.To(parentPos, target, contextMap);
             Vector3 closestDir = Vector3.zero;
 
-            foreach (var friend in Hive.enemies)
-            {
-                var friendPos = friend.transform.position;
+            // foreach (var friend in Hive.enemies)
+            // {
+            //     var friendPos = friend.transform.position;
 
-                var dist = Vector3.Distance(parentPos, friendPos);
-                if (dist > 2f)
-                {
-                    // Debug.Log($"skipping because of distance {actualDist}");
-                    break;
-                }
+            //     var dist = Vector3.Distance(parentPos, friendPos);
+            //     if (dist > 2f)
+            //     {
+            //         // Debug.Log($"skipping because of distance {actualDist}");
+            //         break;
+            //     }
 
-                if (friend.Equals(parentHandler))
-                {
-                    // Debug.Log($"skippig cus same");
-                    continue;
-                }
-                closestDir += Movement.Repel(
-                    dist,
-                    parentPos,
-                    friendPos,
-                    repelStrength,
-                    minRepelStrength,
-                    maxRepelStrength
-                );
-            }
+            //     if (friend.Equals(parentHandler))
+            //     {
+            //         // Debug.Log($"skippig cus same");
+            //         continue;
+            //     }
+            //     closestDir += Movement
+            //         .Repel(dist, parentPos, friendPos, repelStrength, minRepelStrength, maxRepelStrength)
+            //         .normalized;
+            // }
 
-            return closestDir * 1000;
+            return closestDir / 30;
         }
 
         public void Finish()
