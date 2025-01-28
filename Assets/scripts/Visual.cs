@@ -2,7 +2,11 @@ using UnityEngine;
 
 public class Visual : MonoBehaviour
 {
-    public static void Marker(Vector3 pos, float radius)
+    public static void Marker(Vector3 pos) => drawMarker(pos, 1f);
+
+    public static void Marker(Vector3 pos, float radius) => drawMarker(pos, radius);
+
+    static void drawMarker(Vector3 pos, float radius)
     {
         GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         marker.transform.position = pos;
@@ -12,13 +16,21 @@ public class Visual : MonoBehaviour
         Destroy(marker, 5f);
     }
 
-    public static void Sphere(Vector3 pos)
+    static void drawSphere(Vector3 pos, Color col)
     {
         GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         sphere.transform.position = pos;
 
+        var rend = sphere.GetComponent<Renderer>();
+
+        rend.material.color = col;
+
         Destroy(sphere, 5f);
     }
+
+    public static void Sphere(Vector3 pos) => drawSphere(pos, Color.blue);
+
+    public static void Sphere(Vector3 pos, Color col) => drawSphere(pos, col);
 
     public static void Line(Vector3 start, Vector3 end, Color color, float time) => drawLine(start, end, color, time);
 
@@ -32,11 +44,14 @@ public class Visual : MonoBehaviour
         LineRenderer line = obj.AddComponent<LineRenderer>();
 
         line.startColor = color;
+        line.endColor = color;
 
         line.SetPosition(0, start);
         line.SetPosition(1, end);
         Destroy(obj, time);
     }
+
+    public static void Circle(Vector3 pos) => drawCircle(pos, 1f, Color.blue, 5f);
 
     public static void Circle(Vector3 pos, float radius) => drawCircle(pos, radius, Color.blue, 5f);
 

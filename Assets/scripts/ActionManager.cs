@@ -3,6 +3,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using NUnit.Framework;
 using Unity.AI.Navigation;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -54,19 +55,33 @@ public class ActionHandler
     [SerializeField]
     private Dictionary<int, Action> _actions = new();
 
-    public void Start() { }
+    public void Start()
+    {
+        if (runningActionTypes is null)
+        {
+            runningActionTypes = new();
+        }
+    }
+
+    private void OnEnable()
+    {
+        runningActionTypes ??= new();
+    }
 
     [SerializeField]
     private Dictionary<ActionType, int> runningActionTypes = new();
 
     public Dictionary<int, Action> Actions()
     {
+        _actions ??= new();
         return _actions;
     }
 
     public ActionHandler(ActionEnemy enemy)
     {
         parent = enemy;
+
+        runningActionTypes ??= new();
     }
 
     private void Clear()
@@ -77,6 +92,7 @@ public class ActionHandler
                 action.GetState() == ActionState.Finishing,
                 $"trying to finish an action that is not ready to finish, received: {action.GetState()}"
             );
+            Debug.Log($"finishing an action that is to finish, ({action.GetId()}) state: {action.GetState()}");
             action.Finish();
             _actions.Remove(action.GetId());
             // runningActionTypes.Remove(action.GetActionType());
@@ -161,6 +177,11 @@ public class ActionHandler
         // toFinish.Clear();
     }
 
+    public bool Has(ActionType type)
+    {
+        return runningActionTypes.ContainsKey(type);
+    }
+
     public Action GetAction(int id)
     {
         _actions.TryGetValue(id, out var action);
@@ -215,6 +236,7 @@ public class ActionHandler
             if (force)
             {
                 runningAction.Finish();
+                Debug.Log("Finishing action to execute another one");
                 Finish(actionId);
             }
             else
@@ -231,6 +253,11 @@ public class ActionHandler
     public List<Action> RunningActions()
     {
         List<Action> total = new();
+
+        //todo: this should be deleted once the good assertion is setup;
+        runningActionTypes ??= new();
+
+        Assert.IsNotNull(runningActionTypes, "running action types is somehow null");
 
         //this function could just return the values. but im not sure if my implementation is correct rn so validation is nice
 

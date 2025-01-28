@@ -57,8 +57,6 @@ public class ScanAction : Action
             Assert.IsTrue(tag, "getting distance of an undefined tag? stinky");
             float distance = Vector3.Distance(_handler.transform.position, tag.transform.position);
 
-            Visual.Circle(tag.transform.position, scanRadius);
-
             if (distance > scanRadius)
             {
                 return;
@@ -75,7 +73,8 @@ public class ScanAction : Action
                         Hive.GetId(),
                         _handler,
                         Priority.High,
-                        Hive.GetPath(tag.transform.position, _handler.transform.position)
+                        Hive.GetPath(tag.transform.position, _handler.transform.position),
+                        MoveTargetType.Position
                     ),
                     false
                 );

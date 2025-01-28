@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using actions;
 using SmartEnemies;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Assertions;
@@ -42,7 +41,7 @@ public class Hive : MonoBehaviour
         Assert.IsTrue(Hive.enemies.Length > 0, "you forgot to init enemies");
         Debug.Log($"hive initialized, enemies: {Hive.enemies.Length}");
 
-        var batches = manager.Batches();
+        var batches = Hive.Manager.Batches();
 
         var angleIncrement = 360f / batches.Count;
 
@@ -59,12 +58,9 @@ public class Hive : MonoBehaviour
         foreach (var enemy in enemies)
         {
             Follow(enemy, players[0]);
-            positions.TryGetValue(enemy.GetBatch()!.GetId(), out var pos);
+            // positions.TryGetValue(enemy.GetBatch()!.GetId(), out var pos);
 
-            // foreach (var pos in positions.Values)
-            // {
             // MoveToPosition(enemy, pos);
-            // }
         }
     }
 
@@ -109,14 +105,16 @@ public class Hive : MonoBehaviour
 
         Assert.IsTrue(path.corners.Length > 0, "invalid path on batching");
 
-        handler.actions.Add(new MoveAction(Hive.GetId(), handler, Priority.High, path));
+        handler.actions.Add(new MoveAction(Hive.GetId(), handler, Priority.High, path, MoveTargetType.Position));
 
         Assert.IsTrue(handler.actions.Actions().Count > 0, "no actions were actually initialized");
     }
 
-    private static void Follow(ActionEnemy enemy, GameObject player)
+    public static void Follow(ActionEnemy enemy, GameObject player)
     {
-        enemy.actions.Add(new FollowAction(GetId(), enemy, Priority.High, player));
+        // enemy.actions.Add(
+        //     new FollowAction(GetId(), enemy, Priority.High, () => player.transform.position, MoveTargetType.Player)
+        // );
     }
 
     private static void MovePoints(ActionEnemy handler, List<GameObject> p)
@@ -141,9 +139,7 @@ public class Hive : MonoBehaviour
 
             Assert.IsTrue(path.corners.Length > 0, "invalid path on batching");
 
-            handler.actions.Add(new MoveAction(Hive.GetId(), handler, Priority.High, path));
-
-            // handler.actions.Add(new DebugAction(Hive.GetId(), handler, Priority.High, bcolor));
+            handler.actions.Add(new MoveAction(Hive.GetId(), handler, Priority.High, path, MoveTargetType.Position));
         }
 
         Assert.IsTrue(handler.actions.Actions().Count > 0, "no actions were actually initialized");

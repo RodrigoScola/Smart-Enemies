@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using actions;
@@ -24,7 +25,7 @@ namespace SmartEnemies
             id = value;
         }
 
-        public Dictionary<int, ActionEnemy> enemies;
+        public Dictionary<int, ActionEnemy> Enemies;
     }
 }
 
@@ -39,6 +40,8 @@ public class HiveActionManager
     Dictionary<int, BatchEnemies> batches = new();
 
     private Dictionary<int, int> enemyBatches = new();
+
+    private bool ran = false;
 
     public List<BatchEnemies> Batches()
     {
@@ -62,14 +65,14 @@ public class HiveActionManager
 
         batches.TryGetValue(batchId, out var batch);
         Assert.NotNull(batch, "batch does not exist");
-        Assert.IsTrue(batch.enemies.ContainsKey(enemyId), "batch does not contain enemy");
+        Assert.IsTrue(batch.Enemies.ContainsKey(enemyId), "batch does not contain enemy");
 
         return batch;
     }
 
     private BatchEnemies NewBatch()
     {
-        BatchEnemies currentBatch = new() { enemies = new() };
+        BatchEnemies currentBatch = new() { Enemies = new() };
         currentBatch.SetId(Hive.GetId());
         return currentBatch;
     }
@@ -117,7 +120,7 @@ public class HiveActionManager
             var en = sorted[0];
             sorted = SortByDistance(en.transform.position, sorted);
 
-            currentBatch.enemies.Add(en.GetId(), en);
+            currentBatch.Enemies.Add(en.GetId(), en);
 
             enemyBatches.TryGetValue(en.GetId(), out var id);
 
@@ -129,7 +132,7 @@ public class HiveActionManager
             enemyBatches.Add(en.GetId(), currentBatch.GetId());
             sorted.RemoveAt(0);
 
-            if (currentBatch.enemies.Count == maxPerBatch)
+            if (currentBatch.Enemies.Count == maxPerBatch)
             {
                 batches.Add(currentBatch.GetId(), currentBatch);
                 currentBatch = NewBatch();
@@ -147,7 +150,7 @@ public class HiveActionManager
         int batchIdx = 0;
         foreach (var batch in batches.Values)
         {
-            var enemies = batch.enemies;
+            var enemies = batch.Enemies;
             Assert.IsTrue(
                 enemies.Count <= maxPerBatch,
                 $"there should be max {maxPerBatch} per batch, received: {enemies.Count}"
@@ -169,13 +172,73 @@ public class HiveActionManager
         //should prob replace this with a better alternative, maybe coroutines
         ticks++;
 
-        if (ticks % 100 == 0)
+        // if (ticks % 100 == 0)
+        // {
+        //     Rebatch();
+        // }
+
+        var player = Hive.players[0].GetComponent<DemoPLayer>();
+        Assert.IsNotNull(player, "player does not have demo player");
+
+        if (ticks % 200 == 0 && ran == false)
         {
-            // Rebatch();
+            ran = true;
+
+            foreach (var batch in Batches())
+            {
+                foreach (var en in batch.Enemies.Values)
+                {
+                    try
+                    {
+                        var running = en.actions.RunningActions().First((ac) => ac.GetActionType() == ActionType.Move);
+
+                        en.actions.Remove(running);
+                    }
+                    catch (Exception) { }
+
+                    var dist = Vector3.Distance(en.transform.position, player.transform.position);
+
+                    if (dist < en.MinDistance())
+                    {
+                        var path = Hive.GetPath(en.transform.position, Vector3.zero);
+
+                        foreach (var p in path.corners)
+                        {
+                            Visual.Sphere(p);
+                        }
+
+                        en.MinDistance(2);
+
+                        en.actions.Add(
+                            new MoveAction(
+                                Hive.GetId(),
+                                en,
+                                Priority.High,
+                                Hive.GetPath(en.transform.position, Vector3.zero),
+                                MoveTargetType.Position
+                            )
+                        );
+                    }
+
+                    en.actions.Add(
+                        new FollowAction(
+                            Hive.GetId(),
+                            en,
+                            Priority.High,
+                            () =>
+                            {
+                                return player.Left(2);
+                            },
+                            MoveTargetType.Player
+                        )
+                    );
+                }
+            }
         }
+
         foreach (var batch in batches.Values)
         {
-            foreach (var en in batch.enemies.Values)
+            foreach (var en in batch.Enemies.Values)
             {
                 en.Tick();
             }

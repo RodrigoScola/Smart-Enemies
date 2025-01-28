@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Assertions;
@@ -26,7 +27,20 @@ namespace actions
 
         private ActionState state;
 
-        public MoveAction(int id, ActionEnemy handler, Priority priority, NavMeshPath pathing)
+        private MoveTargetType _targetType;
+
+        public MoveTargetType TargetType()
+        {
+            return _targetType;
+        }
+
+        public MoveAction(
+            int id,
+            ActionEnemy handler,
+            Priority priority,
+            NavMeshPath pathing,
+            MoveTargetType targetType
+        )
         {
             this.id = id;
             _priority = priority;
@@ -40,6 +54,9 @@ namespace actions
             state = ActionState.Waiting;
             contextMap = Movement.MakeContextMap(size);
             Movement.ResetContextMap(out contextMap, size);
+
+            _targetType = targetType;
+            Assert.IsFalse(targetType == MoveTargetType.None, "cannot have a target type of none");
         }
 
         public void Run()
@@ -64,29 +81,29 @@ namespace actions
 
             var dist = Vector3.Distance(parentHandler.transform.position, target);
 
-            if (dist < parentHandler.MinDistance())
+            if (dist > parentHandler.MinDistance())
             {
-                if (posIndex >= path.corners.Length)
-                {
-                    Visual.Marker(target, 1f);
-                }
-                Assert.IsTrue(
-                    posIndex < path.corners.Length,
-                    $"the distance to the target is completed but pos index is not correct, expected:{path.corners.Length}, got: {posIndex}"
-                );
+                Debug.Log($"distance is over min, dist {dist}, min {parentHandler.MinDistance()}");
+                return;
+            }
+            Assert.IsTrue(
+                posIndex < path.corners.Length,
+                $"the distance to the target is completed but pos index is not correct, expected:{path.corners.Length}, got: {posIndex}"
+            );
 
-                posIndex++; // Move to the next waypoint
+            posIndex++; // Move to the next waypoint
+            Debug.Log($"moving path, current {posIndex}, total {path.corners.Length}");
 
-                // Check if the path is completed
-                if (posIndex >= path.corners.Length)
-                {
-                    Finish();
-                }
-                else
-                {
-                    var newPos = path.corners[posIndex];
-                    agent.SetDestination(newPos);
-                }
+            // Check if the path is completed
+            if (posIndex >= path.corners.Length)
+            {
+                Debug.Log("ExecuteNow moving action");
+                Finish();
+            }
+            else
+            {
+                var newPos = path.corners[posIndex];
+                agent.SetDestination(newPos);
             }
         }
 
@@ -151,6 +168,7 @@ namespace actions
 
         public void Finish()
         {
+            Debug.Log($"finishing the action, {GetId()}");
             agent.ResetPath();
             parentHandler.actions.Finish(id);
         }

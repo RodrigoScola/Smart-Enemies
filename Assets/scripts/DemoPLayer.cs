@@ -6,6 +6,10 @@ public class DemoPLayer : MonoBehaviour
 {
     private Hive hive;
 
+    [SerializeField]
+    [UnityEngine.Range(0, 1000)]
+    private float bufferDistance;
+
     private MeshRenderer render;
 
     void Start()
@@ -40,10 +44,47 @@ public class DemoPLayer : MonoBehaviour
                 outpos += direction.normalized * (8f - dist);
             }
         }
+
+        outpos *= Time.deltaTime;
+
+        var min = render.bounds.min;
+        var max = render.bounds.max;
+
+        var top = new Vector3(min.x, 0, min.z);
+        var left = new Vector3(min.x, 0, min.z);
+        var right = new Vector3(max.x, 0, max.z);
+        var bottom = new Vector3(max.x, 0, max.z);
+
+        if (
+            outpos.x + transform.position.x > bottom.x - bufferDistance
+            || outpos.x + transform.position.x < top.x + bufferDistance
+        )
+        {
+            outpos.x *= -1;
+        }
+
+        if (
+            outpos.z + transform.position.z < left.z + bufferDistance
+            || outpos.z + transform.position.z > right.z - bufferDistance
+        )
+        {
+            outpos.z *= -1;
+        }
+
         outpos.y = 0;
+        transform.position += outpos;
+        transform.rotation = Quaternion.LookRotation(transform.position);
+    }
 
-        Visual.Line(transform.position + outpos, transform.position, Color.blue, 0.1f);
+    public Vector3 Right(float dist)
+    {
+        Assert.IsTrue(dist > 0, $"distance cannot be less than 0, got: ({dist})");
+        return transform.position + dist * Vector3.right;
+    }
 
-        transform.position += outpos * Time.deltaTime;
+    public Vector3 Left(float dist)
+    {
+        Assert.IsTrue(dist > 0, $"distance cannot be less than 0, got: ({dist})");
+        return transform.position + (Vector3.left * dist);
     }
 }
