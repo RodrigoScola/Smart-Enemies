@@ -62,14 +62,9 @@ namespace actions
             Assert.IsNotNull(path, "should path be null?");
             Assert.IsTrue(path.corners.Length > 0, "was given an invalid path");
 
-            // var force = ComputeContextSteering(target);
-
-            //todo reduce the force lol
-            // parentHandler.transform.position = force;
-
             var dist = Vector3.Distance(parentHandler.transform.position, target);
 
-            if (dist < agent.stoppingDistance)
+            if (dist < parentHandler.MinDistance())
             {
                 if (posIndex >= path.corners.Length)
                 {
@@ -79,8 +74,6 @@ namespace actions
                     posIndex < path.corners.Length,
                     $"the distance to the target is completed but pos index is not correct, expected:{path.corners.Length}, got: {posIndex}"
                 );
-
-                // Debug.Log($"going to the next distance: {posIndex}, total: {path.corners.Length}");
 
                 posIndex++; // Move to the next waypoint
 

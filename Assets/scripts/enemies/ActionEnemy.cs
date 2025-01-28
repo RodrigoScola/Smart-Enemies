@@ -5,14 +5,11 @@ using UnityEngine.AI;
 
 public class ActionEnemy : MonoBehaviour
 {
-    public HiveClass currentClass;
-
     [SerializeField]
     private int _id;
 
     [SerializeField]
     public ActionHandler actions;
-    public HealthSystem health;
 
     public ActionEnemy()
     {
@@ -42,30 +39,26 @@ public class ActionEnemy : MonoBehaviour
 
     private void Start()
     {
-        health.SetParent(this);
-        health.CreateHealthBar();
         actions.Start();
-        health.Setup();
         agent = GetComponent<NavMeshAgent>();
-        currentClass.Setup(this);
     }
 
-    private void Update()
-    {
-        health.CreateHealthBar();
-        // Assert.NotNull(agent, "did i forget to add this ?");
-        // Assert.NotNull(actions, "forgot to init actions?");
-        if (!health.barCreated)
-        {
-            health.Setup();
-        }
-        health.Update();
-        health.Display();
-    }
+    private void Update() { }
 
     public void Tick()
     {
         actions.Tick();
-        currentClass.Tick();
+    }
+
+    public void MinDistance(float newDistance)
+    {
+        Assert.IsNotNull(agent, "agent is not setup and trying to get min distance");
+        agent.stoppingDistance = newDistance;
+    }
+
+    public float MinDistance()
+    {
+        Assert.IsNotNull(agent, "agent is not setup and trying to get min distance");
+        return agent.stoppingDistance;
     }
 }

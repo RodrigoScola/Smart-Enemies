@@ -57,9 +57,13 @@ public class Hive : MonoBehaviour
 
         foreach (var enemy in enemies)
         {
+            Follow(enemy, players[0]);
             positions.TryGetValue(enemy.GetBatch()!.GetId(), out var pos);
 
-            MoveToPosition(enemy, pos);
+            // foreach (var pos in positions.Values)
+            // {
+            // MoveToPosition(enemy, pos);
+            // }
         }
     }
 
@@ -88,20 +92,12 @@ public class Hive : MonoBehaviour
         }
         var b = Hive.Manager.Batches();
         Assert.IsTrue(b.Count > 0, "no batch found");
-        // for (var i = 0; i < b.Count; i++)
-        // {
-        //     var angle = i * (360f / b.Count) * Mathf.Deg2Rad;
-
-        //     var pos = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
-        //     Visual.Sphere(pos * 30f, 1f);
-        // }
 
         manager.Tick();
     }
 
     private static void MoveToPosition(ActionEnemy handler, Vector3 position)
     {
-        // handler.actions.Add(new ScanAction(GetId(), handler, Priority.Low));
         handler.actions.Add(new DebugAction(GetId(), handler, Priority.Medium, Color.green));
 
         BatchEnemies? batch = Manager.GetEnemyBatch(handler.GetId());
@@ -114,9 +110,12 @@ public class Hive : MonoBehaviour
 
         handler.actions.Add(new MoveAction(Hive.GetId(), handler, Priority.High, path));
 
-        // handler.actions.Add(new DebugAction(Hive.GetId(), handler, Priority.High, bcolor));
-
         Assert.IsTrue(handler.actions.Actions().Count > 0, "no actions were actually initialized");
+    }
+
+    private static void Follow(ActionEnemy enemy, GameObject player)
+    {
+        enemy.actions.Add(new FollowAction(GetId(), enemy, Priority.High, player));
     }
 
     private static void MovePoints(ActionEnemy handler, List<GameObject> p)
@@ -173,5 +172,10 @@ public class Hive : MonoBehaviour
         } while (path.corners.Length == 0 && times < 10);
         // Assert.IsTrue(path.corners.Length > 0, "invalid path");
         return path;
+    }
+
+    public ActionEnemy[] Enemies()
+    {
+        return Hive.enemies;
     }
 }
