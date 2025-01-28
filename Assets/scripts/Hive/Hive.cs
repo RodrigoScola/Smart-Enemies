@@ -28,6 +28,7 @@ public class Hive : MonoBehaviour
     {
         Hive.EnemyMask = LayerMask.GetMask("Enemy");
         Hive.enemies = FindObjectsByType<ActionEnemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+            .ToList()
             .GroupBy(f => f.GetId())
             .Select(f => f.First())
             .ToArray();
