@@ -4,9 +4,7 @@ using System.Linq;
 using actions;
 using NUnit.Framework;
 using SmartEnemies;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace SmartEnemies
 {
@@ -14,14 +12,14 @@ namespace SmartEnemies
     {
         private int id;
 
-        public int GetId()
+        public readonly int GetId()
         {
             return id;
         }
 
-        public void SetId(int value)
+        public void SetId( int value )
         {
-            Assert.IsTrue(id == 0, "cannot change an id of a batch");
+            Assert.IsTrue( id == 0, "cannot change an id of a batch" );
             id = value;
         }
 
@@ -29,7 +27,7 @@ namespace SmartEnemies
     }
 }
 
-[System.Serializable]
+[Serializable]
 public class HiveActionManager
 {
     [SerializeField]
@@ -37,35 +35,35 @@ public class HiveActionManager
 
     public int maxPerBatch = 45;
 
-    Dictionary<int, BatchEnemies> batches = new();
+    private readonly Dictionary<int, BatchEnemies> batches = new();
 
-    private Dictionary<int, int> enemyBatches = new();
+    private readonly Dictionary<int, int> enemyBatches = new();
 
     private bool ran = false;
 
     public List<BatchEnemies> Batches()
     {
-        Assert.IsTrue(batches.Count > 0, "not batched yet");
+        Assert.IsTrue( batches.Count > 0, "not batched yet" );
         //do i want this
         return batches.Values.ToList();
     }
 
     //todo change this to a dictionary datastructure. this will prob do  for now
-    public BatchEnemies? GetEnemyBatch(int enemyId)
+    public BatchEnemies? GetEnemyBatch( int enemyId )
     {
-        Assert.IsTrue(batches.Count > 0, "no batches yet. do i want this");
+        Assert.IsTrue( batches.Count > 0, "no batches yet. do i want this" );
 
-        enemyBatches.TryGetValue(enemyId, out var batchId);
+        enemyBatches.TryGetValue( enemyId, out int batchId );
 
-        if (batchId == 0)
+        if ( batchId == 0 )
         {
             return null;
         }
-        Assert.IsTrue(batches.ContainsKey(batchId), $"enemy thinks batch {batchId} exists");
+        Assert.IsTrue( batches.ContainsKey( batchId ), $"enemy thinks batch {batchId} exists" );
 
-        batches.TryGetValue(batchId, out var batch);
-        Assert.NotNull(batch, "batch does not exist");
-        Assert.IsTrue(batch.Enemies.ContainsKey(enemyId), "batch does not contain enemy");
+        batches.TryGetValue( batchId, out BatchEnemies batch );
+        Assert.NotNull( batch, "batch does not exist" );
+        Assert.IsTrue( batch.Enemies.ContainsKey( enemyId ), "batch does not contain enemy" );
 
         return batch;
     }
@@ -73,21 +71,21 @@ public class HiveActionManager
     private BatchEnemies NewBatch()
     {
         BatchEnemies currentBatch = new() { Enemies = new() };
-        currentBatch.SetId(Hive.GetId());
+        currentBatch.SetId( Hive.GetId() );
         return currentBatch;
     }
 
-    private List<ActionEnemy> SortByDistance(Vector3 basePoint, List<ActionEnemy> enemies)
+    private List<ActionEnemy> SortByDistance( Vector3 basePoint, List<ActionEnemy> enemies )
     {
         Dictionary<float, ActionEnemy> distances = new();
 
-        foreach (var item in enemies)
+        foreach ( ActionEnemy item in enemies )
         {
-            var dist = Vector3.Distance(basePoint, item.transform.position);
-            Assert.IsFalse(distances.ContainsKey(dist), "same distance on batching enemies?");
-            distances.Add(dist, item);
+            float dist = Vector3.Distance( basePoint, item.transform.position );
+            Assert.IsFalse( distances.ContainsKey( dist ), "same distance on batching enemies?" );
+            distances.Add( dist, item );
         }
-        var result = distances.OrderBy(d => d.Key).Select(f => f.Value).ToList();
+        var result = distances.OrderBy( d => d.Key ).Select( f => f.Value ).ToList();
         Assert.IsTrue(
             result.Count == enemies.Count,
             $"adding or removing more than expected, wanted {enemies.Count}, got {result.Count}"
@@ -95,73 +93,73 @@ public class HiveActionManager
         return result;
     }
 
-    public void Batch(ActionEnemy[] enemies, Dictionary<int, BatchEnemies> currentBatches)
+    public void Batch( ActionEnemy[] enemies, Dictionary<int, BatchEnemies> currentBatches )
     {
-        Assert.IsTrue(enemies.Length > 0, "batching empty amount of enemies");
-        Assert.GreaterOrEqual(maxPerBatch, 1, "cannot have less than 1 per batch");
+        Assert.IsTrue( enemies.Length > 0, "batching empty amount of enemies" );
+        Assert.GreaterOrEqual( maxPerBatch, 1, "cannot have less than 1 per batch" );
 
         currentBatches.Clear();
         enemyBatches.Clear();
 
         BatchEnemies currentBatch = NewBatch();
 
-        var sorted = SortByDistance(enemies[0].transform.position, enemies.ToList());
+        List<ActionEnemy> sorted = SortByDistance( enemies[0].transform.position, enemies.ToList() );
 
         Assert.IsTrue(
             enemies.Length == sorted.Count,
             $"sorted enemies not equal, expected:{enemies.Length} got {sorted.Count}"
         );
 
-        Assert.IsTrue(enemyBatches.Count == 0, "didnt clear the enemy batches good enougth");
-        Assert.IsTrue(currentBatches.Count == 0, "didnt clear the batches good enougth");
+        Assert.IsTrue( enemyBatches.Count == 0, "didnt clear the enemy batches good enougth" );
+        Assert.IsTrue( currentBatches.Count == 0, "didnt clear the batches good enougth" );
 
-        while (sorted.Count > 0)
+        while ( sorted.Count > 0 )
         {
-            var en = sorted[0];
-            sorted = SortByDistance(en.transform.position, sorted);
+            ActionEnemy en = sorted[0];
+            sorted = SortByDistance( en.transform.position, sorted );
 
-            currentBatch.Enemies.Add(en.GetId(), en);
+            currentBatch.Enemies.Add( en.GetId(), en );
 
-            enemyBatches.TryGetValue(en.GetId(), out var id);
+            enemyBatches.TryGetValue( en.GetId(), out int id );
 
             Assert.IsFalse(
-                enemyBatches.ContainsKey(en.GetId()),
+                enemyBatches.ContainsKey( en.GetId() ),
                 $"duplicate enemy ({en.GetId()}) on batching  index: {id}"
             );
 
-            enemyBatches.Add(en.GetId(), currentBatch.GetId());
-            sorted.RemoveAt(0);
+            enemyBatches.Add( en.GetId(), currentBatch.GetId() );
+            sorted.RemoveAt( 0 );
 
-            if (currentBatch.Enemies.Count == maxPerBatch)
+            if ( currentBatch.Enemies.Count == maxPerBatch )
             {
-                batches.Add(currentBatch.GetId(), currentBatch);
+                batches.Add( currentBatch.GetId(), currentBatch );
                 currentBatch = NewBatch();
             }
         }
 
-        batches.Add(currentBatch.GetId(), currentBatch);
+        batches.Add( currentBatch.GetId(), currentBatch );
     }
 
     public void Rebatch()
     {
-        Batch(Hive.enemies, batches);
-        Assert.IsTrue(batches.Count > 0, $"no batches came out, even with {Hive.enemies.Length}");
+        Batch( Hive.enemies, batches );
+        Assert.IsTrue( batches.Count > 0, $"no batches came out, even with {Hive.enemies.Length}" );
 
         int batchIdx = 0;
-        foreach (var batch in batches.Values)
+        foreach ( BatchEnemies batch in batches.Values )
         {
-            var enemies = batch.Enemies;
+            Dictionary<int, ActionEnemy> enemies = batch.Enemies;
             Assert.IsTrue(
                 enemies.Count <= maxPerBatch,
                 $"there should be max {maxPerBatch} per batch, received: {enemies.Count}"
             );
 
             float hue = (float)batchIdx / batches.Count;
-            Color bcolor = Color.HSVToRGB(hue, 1f, 1f);
+            var bcolor = Color.HSVToRGB( hue, 1f, 1f );
 
-            foreach (var en in enemies.Values)
+            foreach ( ActionEnemy en in enemies.Values )
             {
-                en.actions.Add(new DebugAction(Hive.GetId(), en, Priority.High, bcolor));
+                en.actions.Add( new DebugAction( Hive.GetId(), en, Priority.High, bcolor ) );
             }
             batchIdx++;
         }
@@ -177,46 +175,88 @@ public class HiveActionManager
         //     Rebatch();
         // }
 
-        var player = Hive.players[0].GetComponent<DemoPLayer>();
-        Assert.IsNotNull(player, "player does not have demo player");
+        DemoPLayer player = Hive.players[0].GetComponent<DemoPLayer>();
+        Assert.IsNotNull( player, "player does not have demo player" );
 
-        if (ticks % 200 == 0 && ran == false)
+        if ( ticks % 100 == 0 && !ran )
         {
             ran = true;
 
-            foreach (var batch in Batches())
+            foreach ( BatchEnemies batch in Batches() )
             {
-                foreach (var en in batch.Enemies.Values)
+                foreach ( ActionEnemy en in batch.Enemies.Values )
                 {
                     try
                     {
-                        var running = en.actions.RunningActions().First((ac) => ac.GetActionType() == ActionType.Move);
+                        Action running = en.actions.RunningActions().First( ( ac ) => ac.GetActionType() == ActionType.Move );
 
-                        en.actions.Remove(running);
+                        en.actions.Remove( running );
                     }
-                    catch (Exception) { }
+                    catch ( Exception ) { }
 
-                    var dist = Vector3.Distance(en.transform.position, player.transform.position);
+                    en.actions.Add( new ScanAction( Hive.GetId(), en, Priority.Medium ) );
 
-                    if (dist < en.MinDistance())
+                    float dist = Vector3.Distance( en.transform.position, player.transform.position );
+
+                    if ( dist < en.MinDistance() )
                     {
-                        var path = Hive.GetPath(en.transform.position, Vector3.zero);
+                        // Visual.Circle(player.transform.position, en.MinDistance());
+                        // var path = Hive.GetPath(en.transform.position, Vector3.zero);
 
-                        foreach (var p in path.corners)
+                        // foreach (var p in path.corners)
+                        // {
+                        //     Visual.Sphere(p);
+                        // }
+
+                        // en.MinDistance(2);
+
+                        // en.actions.Add(
+                        //     new MoveAction(
+                        //         Hive.GetId(),
+                        //         en,
+                        //         Priority.High,
+                        //         Hive.GetPath(en.transform.position, Vector3.zero),
+                        //         MoveTargetType.Position
+                        //     )
+                        // );
+                        Vector3 direction = en.transform.position - player.transform.position;
+                        direction.Normalize();
+
+                        UnityEngine.AI.NavMeshPath path = Hive.GetPath(
+                            en.transform.position,
+                            player.transform.position + (direction * (en.MinDistance() + 1f))
+                        );
+
+                        Vector3[] paths = new[] { Vector3.left, Vector3.right, Vector3.forward, Vector3.back };
+                        int ind = 1;
+                        do
                         {
-                            Visual.Sphere(p);
+                            foreach ( Vector3 pos in paths )
+                            {
+                                UnityEngine.AI.NavMeshPath left = Hive.GetPath(
+                                    en.transform.position,
+                                    player.transform.position + (pos * ind) + (direction * (en.MinDistance() + 1f))
+                                );
+
+                                if ( left.corners.Length > 0 )
+                                {
+                                    path = left;
+                                    break;
+                                }
+                            }
+
+                            ind++;
+                        } while ( path.corners.Length == 0 );
+
+                        foreach ( Vector3 point in path.corners )
+                        {
+                            Visual.Sphere( point );
                         }
 
-                        en.MinDistance(2);
+                        en.MinDistance( 2 );
 
                         en.actions.Add(
-                            new MoveAction(
-                                Hive.GetId(),
-                                en,
-                                Priority.High,
-                                Hive.GetPath(en.transform.position, Vector3.zero),
-                                MoveTargetType.Position
-                            )
+                            new FollowAction( Hive.GetId(), en, Priority.High, path, MoveTargetType.Position )
                         );
                     }
 
@@ -227,7 +267,7 @@ public class HiveActionManager
                             Priority.High,
                             () =>
                             {
-                                return player.Left(2);
+                                return player.Left( 2 );
                             },
                             MoveTargetType.Player
                         )
@@ -236,15 +276,15 @@ public class HiveActionManager
             }
         }
 
-        foreach (var batch in batches.Values)
+        foreach ( BatchEnemies batch in batches.Values )
         {
-            foreach (var en in batch.Enemies.Values)
+            foreach ( ActionEnemy en in batch.Enemies.Values )
             {
                 en.Tick();
             }
         }
-        Assert.IsNotNull(Hive.enemies, "you didnt initialize enemies? how did it get past all the errors");
+        Assert.IsNotNull( Hive.enemies, "you didnt initialize enemies? how did it get past all the errors" );
 
-        Assert.IsTrue(Hive.enemies.Length > 0, "are you sure you dont want any enemies right now?");
+        Assert.IsTrue( Hive.enemies.Length > 0, "are you sure you dont want any enemies right now?" );
     }
 }

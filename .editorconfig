@@ -17,10 +17,100 @@ max_line_length = 120
 max_blank_lines_in_code = 1
 
 # C# formatting rules
-csharp_new_line_before_open_brace = all
-csharp_new_line_before_else = true
-csharp_new_line_before_catch = true
-csharp_new_line_before_finally = true
 csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_between_query_expression_clauses = true
+csharp_indent_case_contents = true
+csharp_space_after_cast = false
+csharp_space_between_parentheses = control_flow_statements
+csharp_space_between_method_declaration_parameter_list_parentheses = true
+csharp_space_between_method_call_parameter_list_parentheses = true
+csharp_preserve_single_line_blocks = true
+
+
+csharp_style_var_for_built_in_types = false
+csharp_style_var_elsewhere = false
+
+
+# # CS0219: Variable is assigned but its value is never used
+# dotnet_diagnostic.CS0219.severity = warning
+# CA1870: Use a cached 'SearchValues' instance
+dotnet_diagnostic.CA1870.severity = warning
+# CA1868: Unnecessary call to 'Contains' for sets
+dotnet_diagnostic.CA1868.severity = warning
+# CA1864: Prefer the 'IDictionary.TryAdd(TKey, TValue)' method
+dotnet_diagnostic.CA1864.severity = warning
+# CA1861: Avoid constant arrays as arguments
+dotnet_diagnostic.CA1861.severity = warning
+# CA1859: Use concrete types when possible for improved performance
+dotnet_diagnostic.CA1859.severity = warning
+# CA1854: Prefer the IDictionary.TryGetValue(TKey, out TValue) method
+dotnet_diagnostic.CA1854.severity = warning
+# CA1853: Unnecessary call to 'Dictionary.ContainsKey(key)'
+dotnet_diagnostic.CA1853.severity = warning
+# CA1843: Do not use 'WaitAll' with a single task
+dotnet_diagnostic.CA1843.severity = warning
+# CA1842: Do not use 'WhenAll' with a single task
+dotnet_diagnostic.CA1842.severity = warning
+# CA1841: Prefer Dictionary Contains methods
+dotnet_diagnostic.CA1841.severity = warning
+# CA1836: Prefer IsEmpty over Count when available
+dotnet_diagnostic.CA1836.severity = warning
+# CA1826: Use property instead of Linq Enumerable method
+dotnet_diagnostic.CA1826.severity = warning
+# CA1825: Avoid zero-length array allocations
+dotnet_diagnostic.CA1825.severity = warning
+# CA1805: Do not initialize unnecessarily
+dotnet_diagnostic.CA1805.severity = warning
+# CA1514: Avoid redundant length argument
+dotnet_diagnostic.CA1514.severity = warning
+# CA1512: Use ArgumentOutOfRangeException throw helper
+dotnet_diagnostic.CA1512.severity = warning
+# CA1511: Use ArgumentException throw helper
+dotnet_diagnostic.CA1511.severity = warning
+# CA1502: Avoid excessive complexity
+dotnet_diagnostic.CA1502.severity = warning
+# CA1065: Do not raise exceptions in unexpected locations
+dotnet_diagnostic.CA1065.severity = warning
+# CA1008: Enums should have zero value
+dotnet_diagnostic.CA1008.severity = warning
+# CA2000: Dispose objects before losing scope
+dotnet_diagnostic.CA2000.severity = warning
+# CA2008: Do not create tasks without passing a TaskScheduler
+dotnet_diagnostic.CA2008.severity = warning
+# CA1801: Review unused parameters
+dotnet_diagnostic.CA1801.severity = warning
+# CA2242: Test for NaN correctly
+dotnet_diagnostic.CA2242.severity = warning
+# CA2244: Do not duplicate indexed element initializations
+dotnet_diagnostic.CA2244.severity = warning
+# CA2249: Consider using String.Contains instead of String.IndexOf 
+dotnet_diagnostic.CA2249.severity = warning
+# Add missing cases to switch statement (IDE0010)
+dotnet_diagnostic.IDE0010.severity = warning
+# Use pattern matching to avoid 'is' check followed by a cast (IDE0020 and IDE0038)
+dotnet_analyzer_diagnostic.category-Style.severity = warning
+# Null check can be simplified (IDE0029, IDE0030, and IDE0270)
+dotnet_diagnostic.IDE0029.severity = warning
+dotnet_diagnostic.IDE0030.severity = warning
+dotnet_diagnostic.IDE0270.severity = warning
+
+#pragma warning disable IDE0058 // Expression value is never used
+dotnet_diagnostic.IDE0058.severity = none
+# Use expression body for methods (IDE0022)
+dotnet_diagnostic.IDE0022.severity = none
+
+#pragma warning disable IDE0130 // Namespace does not match folder structure
+dotnet_diagnostic.IDE0130.severity = none
+
+# Make local function static (IDE0062)
+dotnet_diagnostic.IDE0062.severity = warning
+
+# Use pattern matching (IDE0078 and IDE0260)
+dotnet_analyzer_diagnostic.category-Style.severity = warning
+
+# Simplify LINQ expression (IDE0120)
+dotnet_analyzer_diagnostic.category-Style.severity = warning
+
+# Remove unnecessary lambda expression (IDE0200)
+dotnet_analyzer_diagnostic.category-Style.severity = warning

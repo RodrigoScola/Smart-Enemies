@@ -1,3 +1,4 @@
+using System;
 using actions;
 // Ensure that the Hive namespace is correctly referenced
 using NUnit.Framework;
@@ -15,7 +16,7 @@ public class ScanAction : Action
 
     public void Finish() { }
 
-    public ScanAction(int id, ActionEnemy handler, Priority prio)
+    public ScanAction( int id, ActionEnemy handler, Priority prio )
     {
         _id = id;
         _priority = prio;
@@ -42,43 +43,63 @@ public class ScanAction : Action
         return _state;
     }
 
-    public void SetState(ActionState newState)
+    public void SetState( ActionState newState )
     {
         _state = newState;
     }
 
     public void Tick()
     {
-        var tags = GameObject.FindGameObjectsWithTag("reward");
-
-        foreach (var tag in tags)
+        System.Collections.Generic.List<GameObject> ps = Hive.players.FindAll( f =>
         {
-            Assert.IsTrue(_handler, "getting distance of an undefined handler? stinky");
-            Assert.IsTrue(tag, "getting distance of an undefined tag? stinky");
-            float distance = Vector3.Distance(_handler.transform.position, tag.transform.position);
+            return (f.transform.position - _handler.transform.position).magnitude < _handler.MinDistance();
+        } );
 
-            if (distance > scanRadius)
+        // if (direction.magnitude < _handler.MinDistance())
+        // {
+        //     Action? runningAction = null;
+        //     try
+        //     {
+        //         var running = _handler.actions.RunningActions().Find(r => r.GetActionType() == ActionType.Move);
+        //         if (running != null)
+        //         {
+        //             _handler.actions.Remove(running);
+        //             runningAction = running;
+        //         }
+        //     }
+        //     catch (Exception) { }
+        // }
+
+        GameObject[] tags = GameObject.FindGameObjectsWithTag( "reward" );
+
+        foreach ( GameObject tag in tags )
+        {
+            Assert.IsTrue( _handler, "getting distance of an undefined handler? stinky" );
+            Assert.IsTrue( tag, "getting distance of an undefined tag? stinky" );
+            float distance = Vector3.Distance( _handler.transform.position, tag.transform.position );
+
+            if ( distance > scanRadius )
             {
                 return;
             }
-            foreach (Action running in _handler.actions.RunningActions())
+            foreach ( Action running in _handler.actions.RunningActions() )
             {
-                if (running.GetActionType() != ActionType.Move)
+                if ( running.GetActionType() != ActionType.Move )
                 {
                     continue;
                 }
-                _handler.actions.Remove(running);
+                _handler.actions.Remove( running );
                 _handler.actions.ExecuteNow(
                     new MoveAction(
                         Hive.GetId(),
                         _handler,
                         Priority.High,
-                        Hive.GetPath(tag.transform.position, _handler.transform.position),
+                        Hive.GetPath( tag.transform.position, _handler.transform.position ),
                         MoveTargetType.Position
                     ),
                     false
                 );
-                _handler.actions.ExecuteNow(new DebugAction(Hive.GetId(), _handler, Priority.High, Color.black), true);
+                _handler.actions.ExecuteNow( new DebugAction( Hive.GetId(), _handler, Priority.High, Color.black ), true );
             }
         }
     }

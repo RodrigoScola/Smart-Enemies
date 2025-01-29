@@ -1,8 +1,8 @@
 using NUnit.Framework;
 using SmartEnemies;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
+using System.Reflection;
 
 public class ActionEnemy : MonoBehaviour
 {
@@ -14,8 +14,8 @@ public class ActionEnemy : MonoBehaviour
 
     public BatchEnemies GetBatch()
     {
-        var batch = Hive.Manager.GetEnemyBatch(_id);
-        Assert.IsNotNull(batch, "did not batch enemy yet");
+        BatchEnemies? batch = Hive.Manager.GetEnemyBatch( _id );
+        Assert.IsNotNull( batch, "did not batch enemy yet" );
 
         return (BatchEnemies)batch;
     }
@@ -40,7 +40,7 @@ public class ActionEnemy : MonoBehaviour
     private void Start()
     {
         _id = Hive.GetId();
-        actions = new ActionHandler(this);
+        actions = new ActionHandler( this );
         actions.Start();
         agent = GetComponent<NavMeshAgent>();
     }
@@ -52,9 +52,9 @@ public class ActionEnemy : MonoBehaviour
         actions.Tick();
     }
 
-    public void MinDistance(float newDistance)
+    public void MinDistance( float newDistance )
     {
-        Assert.IsNotNull(agent, "agent is not setup and trying to get min distance");
+        Assert.IsNotNull( agent, "agent is not setup and trying to get min distance" );
         Assert.IsTrue(
             agent.stoppingDistance >= 0.5f,
             $"distance ({agent.stoppingDistance}) is too small on the agent stopping distance"
@@ -64,7 +64,7 @@ public class ActionEnemy : MonoBehaviour
 
     public float MinDistance()
     {
-        Assert.IsNotNull(agent, "agent is not setup and trying to get min distance");
+        Assert.IsNotNull( agent, "agent is not setup and trying to get min distance" );
         Assert.IsTrue(
             agent.stoppingDistance >= 0.5f,
             $"distance ({agent.stoppingDistance}) is too small on the agent stopping distance"
@@ -76,32 +76,32 @@ public class ActionEnemy : MonoBehaviour
     {
         bool isFollowing = false;
 
-        foreach (var action in actions.RunningActions())
+        foreach ( Action action in actions.RunningActions() )
         {
-            if (action.GetActionType() != ActionType.Move)
+            if ( action.GetActionType() != ActionType.Move )
             {
                 continue;
             }
 
-            var method = action.GetType().GetMethod("TargetType");
-            if (method is null)
+            MethodInfo method = action.GetType().GetMethod( "TargetType" );
+            if ( method is null )
             {
-                Debug.Log($"Type: {action.GetType()}");
+                Debug.Log( $"Type: {action.GetType()}" );
             }
-            Assert.IsNotNull(method, "movement action type has to have a target type method");
+            Assert.IsNotNull( method, "movement action type has to have a target type method" );
 
-            if (method.Invoke(action, null) is MoveTargetType target)
+            if ( method.Invoke( action, null ) is MoveTargetType target )
             {
-                Assert.IsTrue(target != MoveTargetType.None, "target type cannot be none");
+                Assert.IsTrue( target != MoveTargetType.None, "target type cannot be none" );
 
-                if (isFollowing == false)
+                if ( !isFollowing )
                 {
                     isFollowing = target == MoveTargetType.Player;
                 }
             }
             else
             {
-                Assert.IsTrue(1 == 2, "there is no target type for movement  action");
+                Assert.IsTrue( 1 == 2, "there is no target type for movement  action" );
             }
         }
 
