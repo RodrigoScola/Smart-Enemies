@@ -56,6 +56,13 @@ public class Hive : MonoBehaviour
             Vector3 pos = new(Mathf.Cos(angle), 0, Mathf.Sin(angle));
             positions.Add(batches[i].GetId(), pos * 20f);
         }
+        foreach (ActionEnemy enemy in enemies)
+        {
+            Assert.IsTrue(enemy.GetBatch().GetId() > -1, "invalid batch to initialize");
+            positions.TryGetValue(enemy.GetBatch()!.GetId(), out Vector3 pos);
+
+            MoveToPosition(enemy, pos);
+        }
     }
 
     public static int GetId()
@@ -80,7 +87,6 @@ public class Hive : MonoBehaviour
             .Select(f => f.First())
             .ToArray();
         List<BatchEnemies> b = Manager.Batches();
-        Manager.Rebatch();
         Assert.IsTrue(b.Count > 0, "no batch found");
 
         manager.Tick();

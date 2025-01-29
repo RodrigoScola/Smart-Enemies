@@ -200,12 +200,12 @@ public class HiveActionManager
 
         if (ticks % 25 == 0)
         {
-            PredictPlayerPostion(players);
+            // PredictPlayerPostion(players);
         }
 
         if (ticks % 100 == 0 && !ran)
         {
-            Initializebatching(player);
+            // Initializebatching(player);
         }
 
         foreach (BatchEnemies batch in batches.Values)

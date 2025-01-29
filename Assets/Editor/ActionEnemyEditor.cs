@@ -24,7 +24,7 @@ public class ActionEnemyEditor : Editor
 
         EditorGUILayout.TextField("Is Following player", $"{en.IsFollowingPlayer()}");
 
-        var actions = en.actions.Actions();
+        System.Collections.Generic.Dictionary<int, Action> actions = en.actions.Actions();
 
         EditorGUILayout.IntField("Total Actions", actions.Count);
 
