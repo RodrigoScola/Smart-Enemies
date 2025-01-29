@@ -8,7 +8,9 @@ public class MoveAction : Action
     private readonly Priority _priority;
     private readonly NavMeshAgent agent;
 
+#pragma warning disable IDE0052 // Remove unread private members
     private readonly Vector3[] contextMap; // Array to store direction weights
+#pragma warning restore IDE0052 // Remove unread private members
 
     private readonly int id;
     private readonly ActionEnemy parentHandler;
@@ -32,56 +34,50 @@ public class MoveAction : Action
         return _targetType;
     }
 
-    public MoveAction(
-        int id,
-        ActionEnemy handler,
-        Priority priority,
-        NavMeshPath pathing,
-        MoveTargetType targetType
-    )
+    public MoveAction(ActionEnemy handler, Priority priority, NavMeshPath pathing, MoveTargetType targetType)
     {
-        this.id = id;
+        id = Hive.GetId();
         _priority = priority;
         agent = handler.GetComponent<NavMeshAgent>();
 
         parentHandler = handler;
 
         path = pathing;
-        Assert.IsTrue( pathing.corners.Length > 0, "was given an invalid path in the initial parts" );
+        Assert.IsTrue(pathing.corners.Length > 0, "was given an invalid path in the initial parts");
 
         state = ActionState.Waiting;
-        contextMap = Movement.MakeContextMap( size );
-        Movement.ResetContextMap( out contextMap, size );
+        contextMap = Movement.MakeContextMap(size);
+        Movement.ResetContextMap(out contextMap, size);
 
         _targetType = targetType;
-        Assert.IsFalse( targetType == MoveTargetType.None, "cannot have a target type of none" );
+        Assert.IsFalse(targetType == MoveTargetType.None, "cannot have a target type of none");
     }
 
     public void Run()
     {
-        Assert.IsNotNull( agent, "forgot to add agent" );
-        Assert.IsTrue( path.corners.Length > 0, "invalid path to run" );
+        Assert.IsNotNull(agent, "forgot to add agent");
+        Assert.IsTrue(path.corners.Length > 0, "invalid path to run");
 
-        _ = agent.SetDestination( path.corners[posIndex] );
+        _ = agent.SetDestination(path.corners[posIndex]);
     }
 
     public void Tick()
     {
-        Assert.IsNotNull( path, "trying to move to undefined path" );
+        Assert.IsNotNull(path, "trying to move to undefined path");
         List<Action> acts = parentHandler.actions.RunningActions();
 
-        Assert.IsTrue( acts.Contains( this ), "executing running action that is not running" );
+        Assert.IsTrue(acts.Contains(this), "executing running action that is not running");
 
         Vector3 target = path.corners[posIndex];
 
-        Assert.IsNotNull( path, "should path be null?" );
-        Assert.IsTrue( path.corners.Length > 0, "was given an invalid path" );
+        Assert.IsNotNull(path, "should path be null?");
+        Assert.IsTrue(path.corners.Length > 0, "was given an invalid path");
 
-        float dist = Vector3.Distance( parentHandler.transform.position, target );
+        float dist = Vector3.Distance(parentHandler.transform.position, target);
 
-        if ( dist > parentHandler.MinDistance() )
+        if (dist > parentHandler.MinDistance())
         {
-            Debug.Log( $"distance is over min, dist {dist}, min {parentHandler.MinDistance()}" );
+            Debug.Log($"distance is over min, dist {dist}, min {parentHandler.MinDistance()}");
             return;
         }
         Assert.IsTrue(
@@ -90,18 +86,18 @@ public class MoveAction : Action
         );
 
         posIndex++; // Move to the next waypoint
-        Debug.Log( $"moving path, current {posIndex}, total {path.corners.Length}" );
+        Debug.Log($"moving path, current {posIndex}, total {path.corners.Length}");
 
         // Check if the path is completed
-        if ( posIndex >= path.corners.Length )
+        if (posIndex >= path.corners.Length)
         {
-            Debug.Log( "ExecuteNow moving action" );
+            Debug.Log("ExecuteNow moving action");
             Finish();
         }
         else
         {
             Vector3 newPos = path.corners[posIndex];
-            _ = agent.SetDestination( newPos );
+            _ = agent.SetDestination(newPos);
         }
     }
 
@@ -120,7 +116,7 @@ public class MoveAction : Action
         return state;
     }
 
-    public void SetState( ActionState newState )
+    public void SetState(ActionState newState)
     {
         state = newState;
     }
@@ -166,8 +162,8 @@ public class MoveAction : Action
 
     public void Finish()
     {
-        Debug.Log( $"finishing the action, {GetId()}" );
+        Debug.Log($"finishing the action, {GetId()}");
         agent.ResetPath();
-        parentHandler.actions.Finish( id );
+        parentHandler.actions.Finish(id);
     }
 }

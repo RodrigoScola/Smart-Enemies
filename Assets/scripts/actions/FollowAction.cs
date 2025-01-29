@@ -26,13 +26,7 @@ public class FollowAction : Action
 
     private MoveTargetType _targetType;
 
-    public FollowAction(
-        int id,
-        ActionEnemy handler,
-        Priority priority,
-        Func<Vector3> destination,
-        MoveTargetType targetType
-    )
+    public FollowAction(ActionEnemy handler, Priority priority, Func<Vector3> destination, MoveTargetType targetType)
     {
         _handler = handler;
 
@@ -42,7 +36,7 @@ public class FollowAction : Action
 
         // _path = Hive.GetAlternatePath(_handler.transform.position, destination(this), _handler.GetBatch().GetId());
         _path = Hive.GetPath(_handler.transform.position, _destination());
-        _id = id;
+        _id = Hive.GetId();
         _priority = priority;
         _targetType = targetType;
         Assert.IsFalse(_targetType == MoveTargetType.None, "Cannot have a none target type");

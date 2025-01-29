@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Assets\scripts\Visual.cs" />
     <Compile Include="Assets\scripts\actions\ScanAction.cs" />
+    <Compile Include="Assets\scripts\Hive\PlayerHive.cs" />
     <Compile Include="Assets\scripts\actions\MoveAction.cs" />
     <Compile Include="Assets\scripts\actions\DebugAction.cs" />
     <Compile Include="Assets\scripts\enemies\HealthSystem.cs" />

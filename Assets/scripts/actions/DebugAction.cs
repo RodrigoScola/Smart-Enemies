@@ -4,16 +4,16 @@ namespace actions
 {
     public class DebugAction : Action
     {
-        private int _id;
-        private ActionEnemy handler;
+        private readonly int _id;
+        private readonly ActionEnemy handler;
         private Color col;
         private ActionState state;
-        private Renderer rend;
-        private Priority _priority;
+        private readonly Renderer rend;
+        private readonly Priority _priority;
 
-        public DebugAction(int id, ActionEnemy _handler, Priority prio, Color _col)
+        public DebugAction(ActionEnemy _handler, Priority prio, Color _col)
         {
-            _id = id;
+            _id = Hive.GetId();
             handler = _handler;
             col = _col;
             _priority = prio;

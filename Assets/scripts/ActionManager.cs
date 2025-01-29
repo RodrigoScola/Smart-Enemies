@@ -30,7 +30,7 @@ public interface Action
     public ActionType GetActionType();
     public Priority GetPriority();
     public ActionState GetState();
-    public void SetState( ActionState newState );
+    public void SetState(ActionState newState);
     public void Tick();
     public void Run();
     public int GetId();
@@ -70,7 +70,7 @@ public class ActionHandler
         return _actions;
     }
 
-    public ActionHandler( ActionEnemy enemy )
+    public ActionHandler(ActionEnemy enemy)
     {
         parent = enemy;
 
@@ -79,15 +79,15 @@ public class ActionHandler
 
     private void Clear()
     {
-        foreach ( Action action in toFinish )
+        foreach (Action action in toFinish)
         {
             Assert.IsTrue(
                 action.GetState() == ActionState.Finishing,
                 $"trying to finish an action that is not ready to finish, received: {action.GetState()}"
             );
-            Debug.Log( $"finishing an action that is to finish, ({action.GetId()}) state: {action.GetState()}" );
+            Debug.Log($"finishing an action that is to finish, ({action.GetId()}) state: {action.GetState()}");
             action.Finish();
-            _ = _actions.Remove( action.GetId() );
+            _ = _actions.Remove(action.GetId());
             // runningActionTypes.Remove(action.GetActionType());
         }
         toFinish.Clear();
@@ -98,19 +98,19 @@ public class ActionHandler
     {
         Action highestAction = null;
 
-        foreach ( Action action in RunningActions() )
+        foreach (Action action in RunningActions())
         {
-            if ( highestAction == null )
+            if (highestAction == null)
             {
                 highestAction = action;
             }
-            if ( action.GetPriority() > highestAction.GetPriority() && action.GetActionType() != ActionType.Idle )
+            if (action.GetPriority() > highestAction.GetPriority() && action.GetActionType() != ActionType.Idle)
             {
                 highestAction = action;
             }
         }
 
-        if ( highestAction == null )
+        if (highestAction == null)
         {
             return ActionType.Idle;
         }
@@ -121,11 +121,11 @@ public class ActionHandler
     public void Tick()
     {
         Clear();
-        Assert.IsTrue( toFinish.Count == 0, "didnt clear actions" );
+        Assert.IsTrue(toFinish.Count == 0, "didnt clear actions");
 
-        foreach ( Action ac in _actions.Values )
+        foreach (Action ac in _actions.Values)
         {
-            Assert.IsTrue( ac.GetState() != ActionState.Finishing, "not finishing actions correctly" );
+            Assert.IsTrue(ac.GetState() != ActionState.Finishing, "not finishing actions correctly");
         }
 
         List<Action> running = RunningActions();
@@ -134,16 +134,18 @@ public class ActionHandler
             $"got more running than allowed, expected: {concurrentActions}, got: {running}"
         );
 
-        for ( int i = running.Count; i < concurrentActions; i++ )
+        for (int i = running.Count; i < concurrentActions; i++)
         {
             Action next = GetNextAction();
 
-            if ( _actions.Count > 0 && AvailableActions() > 0 )
+            if (_actions.Count > 0 && AvailableActions() > 0)
             {
-                Assert.IsNotNull( next, $"got next null when actions is {_actions.Count}" );
+                Assert.IsNotNull(next, $"got next null when actions is {_actions.Count}");
             }
-            if ( next == null )
+            if (next == null)
+            {
                 continue;
+            }
 
             Assert.IsTrue(
                 next.GetState() == ActionState.Waiting,
@@ -152,95 +154,102 @@ public class ActionHandler
 
             // Debug.Log($"adding new action, running {running}, total: {_actions.Count}");
 
-            next.SetState( ActionState.Running );
-            bool result = runningActionTypes.TryAdd( next.GetActionType(), next.GetId() );
-            Assert.IsTrue( result, "could not add action to running?" );
+            next.SetState(ActionState.Running);
+            bool result = runningActionTypes.TryAdd(next.GetActionType(), next.GetId());
+            Assert.IsTrue(result, "could not add action to running?");
             next.Run();
         }
 
-        foreach ( Action action in _actions.Values )
+        foreach (Action action in _actions.Values)
         {
-            if ( action.GetState() == ActionState.Running )
+            if (action.GetState() == ActionState.Running)
+            {
                 action.Tick();
+            }
 
-            if ( action.GetState() == ActionState.Finishing )
-                toFinish.Add( action );
+            if (action.GetState() == ActionState.Finishing)
+            {
+                toFinish.Add(action);
+            }
         }
 
         // toFinish.Clear();
     }
 
-    public bool Has( ActionType type )
+    public bool Has(ActionType type)
     {
-        return runningActionTypes.ContainsKey( type );
+        return runningActionTypes.ContainsKey(type);
     }
 
-    public Action GetAction( int id )
+    public Action GetAction(int id)
     {
-        _actions.TryGetValue( id, out Action action );
-        Assert.NotNull( id, "tried to get an action that is null" );
+        _actions.TryGetValue(id, out Action action);
+        Assert.NotNull(id, "tried to get an action that is null");
         return action;
     }
 
-    public void Finish( int id )
+    public void Finish(int id)
     {
-        _actions.TryGetValue( id, out Action action );
-        if ( action == null )
-            Assert.IsFalse( runningActionTypes.ContainsValue( id ), "action was removed and was still in running" );
-        Assert.NotNull( action, "action already removed" );
+        _actions.TryGetValue(id, out Action action);
+        if (action == null)
+        {
+            Assert.IsFalse(runningActionTypes.ContainsValue(id), "action was removed and was still in running");
+        }
 
-        runningActionTypes.TryGetValue( action.GetActionType(), out int actionId );
+        Assert.NotNull(action, "action already removed");
 
-        if ( action.GetState() == ActionState.Running )
+        runningActionTypes.TryGetValue(action.GetActionType(), out int actionId);
+
+        if (action.GetState() == ActionState.Running)
         {
             Assert.IsTrue(
                 actionId == id,
                 $"running action is not activelly running, received {action.GetState()} for id: {actionId}"
             );
-            Assert.IsTrue( id == actionId, "mismatch in ids when removing" );
+            Assert.IsTrue(id == actionId, "mismatch in ids when removing");
 
-            runningActionTypes.Remove( action.GetActionType() );
+            runningActionTypes.Remove(action.GetActionType());
         }
 
         // Assert.IsTrue(action.GetState() != ActionState.Finishing,  "tried to finish an finishing action? do i want this");
 
 
-        action.SetState( ActionState.Finishing );
+        action.SetState(ActionState.Finishing);
     }
 
-    private void Stop( int actionId )
+    private void Stop(int actionId)
     {
-        _actions.TryGetValue( actionId, out Action outAction );
-        Assert.IsNotNull( outAction, "trying to stop an action that is not in the list" );
+        _actions.TryGetValue(actionId, out Action outAction);
+        Assert.IsNotNull(outAction, "trying to stop an action that is not in the list");
 
-        outAction.SetState( ActionState.Waiting );
+        outAction.SetState(ActionState.Waiting);
     }
 
-    public void ExecuteNow( Action action, bool force )
+    public void ExecuteNow(Action action, bool force)
     {
-        runningActionTypes.TryGetValue( action.GetActionType(), out int actionId );
-        Assert.IsFalse( _actions.ContainsKey( action.GetId() ), "trying to insert an duplicate action" );
+        runningActionTypes.TryGetValue(action.GetActionType(), out int actionId);
+        Assert.IsFalse(_actions.ContainsKey(action.GetId()), "trying to insert an duplicate action");
 
-        if ( actionId > 0 )
+        if (actionId > 0)
         {
-            runningActionTypes.Remove( action.GetActionType() );
+            runningActionTypes.Remove(action.GetActionType());
 
-            _actions.TryGetValue( actionId, out Action runningAction );
-            if ( force )
+            _actions.TryGetValue(actionId, out Action runningAction);
+            if (force)
             {
                 runningAction.Finish();
-                Debug.Log( "Finishing action to execute another one" );
-                Finish( actionId );
+                Debug.Log("Finishing action to execute another one");
+                Finish(actionId);
             }
             else
             {
-                Stop( actionId );
+                Stop(actionId);
             }
         }
 
-        runningActionTypes.Add( action.GetActionType(), action.GetId() );
-        action.SetState( ActionState.Running );
-        _actions.Add( action.GetId(), action );
+        runningActionTypes.Add(action.GetActionType(), action.GetId());
+        action.SetState(ActionState.Running);
+        _actions.Add(action.GetId(), action);
     }
 
     public List<Action> RunningActions()
@@ -250,57 +259,56 @@ public class ActionHandler
         //todo: this should be deleted once the good assertion is setup;
         runningActionTypes ??= new();
 
-        Assert.IsNotNull( runningActionTypes, "running action types is somehow null" );
+        Assert.IsNotNull(runningActionTypes, "running action types is somehow null");
 
         //this function could just return the values. but im not sure if my implementation is correct rn so validation is nice
 
-        foreach ( int actionId in runningActionTypes.Values )
+        foreach (int actionId in runningActionTypes.Values)
         {
-            _actions.TryGetValue( actionId, out Action action );
-            Assert.IsTrue( action.GetState() == ActionState.Running, "running action that is not running" );
+            _actions.TryGetValue(actionId, out Action action);
+            Assert.IsTrue(action.GetState() == ActionState.Running, "running action that is not running");
 
-            total.Add( action );
+            total.Add(action);
         }
 
         return total;
     }
 
-    public void Remove( Action action )
+    public void Remove(Action action)
     {
-        Assert.IsNotNull( _actions.ContainsKey( action.GetId() ), "trying to remove an action that does not exist" );
+        Assert.IsNotNull(_actions.ContainsKey(action.GetId()), "trying to remove an action that does not exist");
 
-        if ( action.GetState() == ActionState.Running )
+        if (action.GetState() == ActionState.Running)
         {
-            runningActionTypes.TryGetValue( action.GetActionType(), out int actionId );
+            runningActionTypes.TryGetValue(action.GetActionType(), out int actionId);
             Assert.IsTrue(
                 actionId == action.GetId(),
                 "removing an action that says that its running but there was another in its place"
             );
-            runningActionTypes.Remove( action.GetActionType() );
+            runningActionTypes.Remove(action.GetActionType());
         }
-        action.SetState( ActionState.Finishing );
-        toFinish.Add( action );
+        action.SetState(ActionState.Finishing);
+        toFinish.Add(action);
     }
 
-    public void Add( Action action )
+    public void Add(Action action)
     {
-        Assert.IsNotNull( action, "trying to initialize an null action?" );
+        Assert.IsNotNull(action, "trying to initialize an null action?");
 
         _actions ??= new Dictionary<int, Action>();
+        Assert.IsFalse(_actions.TryGetValue(action.GetId(), out _), "action already in actions");
+        _actions.Add(action.GetId(), action);
 
-        Assert.IsFalse( _actions.TryGetValue( action.GetId(), out Action val ), "action already in actions" );
-        _actions.Add( action.GetId(), action );
-
-        Assert.IsTrue( _actions.Count > 0, "did not initialize any actions" );
+        Assert.IsTrue(_actions.Count > 0, "did not initialize any actions");
     }
 
     private int AvailableActions()
     {
         int total = 0;
 
-        foreach ( Action ac in _actions.Values )
+        foreach (Action ac in _actions.Values)
         {
-            if ( ac.GetState() == ActionState.Waiting && !runningActionTypes.ContainsKey( ac.GetActionType() ) )
+            if (ac.GetState() == ActionState.Waiting && !runningActionTypes.ContainsKey(ac.GetActionType()))
             {
                 total++;
             }
@@ -313,21 +321,24 @@ public class ActionHandler
     private Action GetNextAction()
     {
         Action next = null;
-        if ( _actions.Count == 0 )
-            return null;
-
-        foreach ( Action action in _actions.Values )
+        if (_actions.Count == 0)
         {
-            if ( action.GetState() != ActionState.Waiting )
-                continue;
+            return null;
+        }
 
-            if ( runningActionTypes.ContainsKey( action.GetActionType() ) )
+        foreach (Action action in _actions.Values)
+        {
+            if (action.GetState() != ActionState.Waiting || runningActionTypes.ContainsKey(action.GetActionType()))
+            {
                 continue;
+            }
 
             next ??= action;
 
-            if ( action.GetPriority() > next.GetPriority() && action.GetState() == ActionState.Waiting )
+            if (action.GetPriority() > next.GetPriority() && action.GetState() == ActionState.Waiting)
+            {
                 next = action;
+            }
         }
 
         return next;
