@@ -3,7 +3,8 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
-public class PlayerHive
+[CreateAssetMenu(fileName = "PlayerHive", menuName = "Scriptable Objects/PlayerHive")]
+public class PlayerHive : ScriptableObject
 {
     private readonly Dictionary<int, GameObject> _players = new();
 
@@ -26,6 +27,7 @@ public class PlayerHive
     {
         foreach (GameObject player in players)
         {
+            Debug.Log(_players.Count());
             Assert.IsFalse(_players.ContainsKey(player.GetInstanceID()), "cannot have duplicate players");
             Assert.IsNotNull(player.GetComponent<DemoPlayer>(), "player does not have demo player component");
 

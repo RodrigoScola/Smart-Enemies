@@ -1,10 +1,11 @@
-using actions;
-// Ensure that the Hive namespace is correctly referenced
 using NUnit.Framework;
 using UnityEngine;
 
+[CreateAssetMenu(fileName = "ScanAction", menuName = "Scriptable Objects/ScanAction")]
 public class ScanAction : Action
 {
+    // Ensure that the Hive namespace is correctly referenced
+
     private readonly int _id;
     private readonly Priority _priority;
 
@@ -13,7 +14,7 @@ public class ScanAction : Action
 
     private readonly float scanRadius = 15f;
 
-    public void Finish() { }
+    public override void Finish() { }
 
     public ScanAction(int id, ActionEnemy handler, Priority prio)
     {
@@ -22,34 +23,36 @@ public class ScanAction : Action
         _handler = handler;
     }
 
-    public ActionType GetActionType()
+    public override ActionType GetActionType()
     {
         return ActionType.Scan;
     }
 
-    public int GetId()
+    public override int GetId()
     {
         return _id;
     }
 
-    public Priority GetPriority()
+    public override Priority GetPriority()
     {
         return _priority;
     }
 
-    public ActionState GetState()
+    public override ActionState GetState()
     {
         return _state;
     }
 
-    public void SetState(ActionState newState)
+    public override void State(ActionState newState)
     {
         _state = newState;
     }
 
-    public void Tick()
+    public override void Tick()
     {
-        System.Collections.Generic.List<GameObject> ps = Hive.Players()
+        System.Collections.Generic.List<GameObject> ps = _handler
+            .GetHive()
+            .PlayerManager.Players()
             .FindAll(f =>
             {
                 return (f.transform.position - _handler.transform.position).magnitude < _handler.MinDistance();
@@ -103,5 +106,5 @@ public class ScanAction : Action
         }
     }
 
-    public void Run() { }
+    public override void Run() { }
 }

@@ -25,26 +25,12 @@ public enum ActionType
     Scan = 2,
 }
 
-public interface Action
-{
-    public ActionType GetActionType();
-    public Priority GetPriority();
-    public ActionState GetState();
-    public void SetState(ActionState newState);
-    public void Tick();
-    public void Run();
-    public int GetId();
-    public void Finish();
-}
-
 [System.Serializable]
 public class ActionHandler
 {
     public int concurrentActions = 2;
 
     public int totalActionsPassed = 0;
-
-    private ActionEnemy parent;
 
     [SerializeField]
     private readonly List<Action> toFinish = new();
@@ -67,9 +53,9 @@ public class ActionHandler
         return _actions;
     }
 
-    public ActionHandler(ActionEnemy enemy)
+    public ActionHandler()
     {
-        parent = enemy;
+        // parent = enemy;
         Assert.IsTrue(
             totalActionsPassed == 0,
             $"actions should never be reset?? , got: {totalActionsPassed}, should be 0"
@@ -146,7 +132,7 @@ public class ActionHandler
 
             // Debug.Log($"adding new action, running {running}, total: {_actions.Count}");
 
-            next.SetState(ActionState.Running);
+            next.State(ActionState.Running);
             bool result = runningActionTypes.TryAdd(next.GetActionType(), next.GetId());
             Assert.IsTrue(result, "could not add action to running?");
             next.Run();
@@ -206,7 +192,7 @@ public class ActionHandler
         // Assert.IsTrue(action.GetState() != ActionState.Finishing,  "tried to finish an finishing action? do i want this");
 
 
-        action.SetState(ActionState.Finishing);
+        action.State(ActionState.Finishing);
     }
 
     private void Stop(int actionId)
@@ -214,7 +200,7 @@ public class ActionHandler
         _actions.TryGetValue(actionId, out Action outAction);
         Assert.IsNotNull(outAction, "trying to stop an action that is not in the list");
 
-        outAction.SetState(ActionState.Waiting);
+        outAction.State(ActionState.Waiting);
     }
 
     public void ExecuteNow(Action action, bool force)
@@ -240,7 +226,7 @@ public class ActionHandler
         }
 
         runningActionTypes.Add(action.GetActionType(), action.GetId());
-        action.SetState(ActionState.Running);
+        action.State(ActionState.Running);
         _actions.Add(action.GetId(), action);
     }
 
@@ -280,7 +266,7 @@ public class ActionHandler
             );
             runningActionTypes.Remove(action.GetActionType());
         }
-        action.SetState(ActionState.Finishing);
+        action.State(ActionState.Finishing);
         toFinish.Add(action);
     }
 
@@ -337,5 +323,10 @@ public class ActionHandler
         }
 
         return next;
+    }
+
+    internal void Add(object instance)
+    {
+        throw new System.NotImplementedException();
     }
 }

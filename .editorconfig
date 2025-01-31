@@ -17,9 +17,9 @@ max_line_length = 120
 max_blank_lines_in_code = 1
 
 # C# formatting rules
-csharp_new_line_before_members_in_object_initializers = true
-csharp_new_line_before_members_in_anonymous_types = true
-csharp_new_line_between_query_expression_clauses = true
+# csharp_new_line_before_members_in_object_initializers = true
+# csharp_new_line_before_members_in_anonymous_types = true
+# csharp_new_line_between_query_expression_clauses = true
 csharp_indent_case_contents = true
 csharp_space_after_cast = false
 # csharp_space_between_parentheses = control_flow_statements

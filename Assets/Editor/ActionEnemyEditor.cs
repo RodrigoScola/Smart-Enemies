@@ -1,4 +1,3 @@
-using System;
 using UnityEditor;
 
 [CustomEditor(typeof(ActionEnemy))]
@@ -26,18 +25,37 @@ public class ActionEnemyEditor : Editor
 
         System.Collections.Generic.Dictionary<int, Action> actions = en.actions.Actions();
 
+        int id = -1;
+        try
+        {
+            id = en.GetBatch()!.GetId();
+        }
+        finally
+        {
+            EditorGUILayout.IntField("Batch Id", id);
+        }
+
+        EnemyBatch batch = en.GetHive().manager.GetEnemyBatch(en.GetId())!;
+
+        if (batch is not null)
+        {
+            EditorGUILayout.IntField("Enemy Manager Batch id ", batch.GetId());
+        }
+
         EditorGUILayout.IntField("Total Actions", actions.Count);
 
         foreach (Action ac in actions.Values)
         {
-            EditorGUILayout.TextField("Id", $"{ac.GetId()}");
+            SerializedObject myObjectProperty = new(ac);
+            SerializedProperty p = myObjectProperty.GetIterator();
 
-            EditorGUILayout.BeginHorizontal();
-
-            EditorGUILayout.EnumFlagsField("action type", ac.GetActionType());
-            EditorGUILayout.EnumFlagsField("Prority", ac.GetPriority());
-
-            EditorGUILayout.EndHorizontal();
+            if (p.NextVisible(true))
+            {
+                do
+                {
+                    EditorGUILayout.PropertyField(prop, true);
+                } while (prop.NextVisible(false));
+            }
         }
 
         serializedObject.ApplyModifiedProperties();

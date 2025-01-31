@@ -1,6 +1,5 @@
 using System.Reflection;
 using NUnit.Framework;
-using SmartEnemies;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -15,12 +14,19 @@ public class ActionEnemy : MonoBehaviour
     [SerializeField]
     private bool hasStarted = false;
 
+    private Hive hive;
+
+    public Hive GetHive()
+    {
+        return hive;
+    }
+
     public EnemyBatch GetBatch()
     {
-        EnemyBatch? batch = Hive.Manager.GetEnemyBatch(_id);
+        EnemyBatch batch = hive.manager.GetEnemyBatch(_id);
         Assert.IsNotNull(batch, "did not batch enemy yet");
 
-        return (EnemyBatch)batch;
+        return batch;
     }
 
     private void OnEnable()
@@ -42,12 +48,25 @@ public class ActionEnemy : MonoBehaviour
 
     private void Start()
     {
+        Hive[] Hives = FindObjectsByType<Hive>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Assert.IsTrue(Hives.Length == 1, "invalid hive amount. should be 1");
+
+        hive = Hives[0];
+
         agent = GetComponent<NavMeshAgent>();
         _id = Hive.GetId();
-        actions = new ActionHandler(this);
+        actions = new ActionHandler();
         actions.Start();
 
         hasStarted = true;
+
+        DebugAction instance = ScriptableObject.CreateInstance<DebugAction>();
+
+        instance.Handler(this);
+        instance.Color(Color.red);
+        instance.State(ActionState.Waiting);
+
+        actions.Add(instance);
     }
 
     public void Tick()

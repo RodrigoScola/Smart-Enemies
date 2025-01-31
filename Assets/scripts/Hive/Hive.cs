@@ -1,23 +1,19 @@
 using System.Collections.Generic;
 using System.Linq;
-using actions;
-using SmartEnemies;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Assertions;
 
 public class Hive : MonoBehaviour
 {
-    public static ActionEnemy[] enemies;
+    private List<ActionEnemy> enemies;
 
     private static int ids;
 
     [SerializeField]
-    public HiveActionManager manager = new();
+    public HiveManager manager;
 
-    public static HiveActionManager Manager = new();
-
-    public static PlayerHive PlayerManager;
+    public PlayerHive PlayerManager;
 
     public List<GameObject> gamePoints;
 
@@ -35,26 +31,22 @@ public class Hive : MonoBehaviour
 
     private void Start()
     {
+        manager.SetHive(this);
+        List<GameObject> players = GameObject.FindGameObjectsWithTag("Player").ToList();
+        PlayerManager.AddPlayer(players);
+        enemies = Enemies();
         EnemyMask = LayerMask.GetMask("Enemy");
-        enemies = FindObjectsByType<ActionEnemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
-            .ToList()
-            .GroupBy(f => f.GetId())
-            .Select(f => f.First())
-            .ToArray();
 
-        Manager = manager;
+        manager.Batch(enemies);
 
-        PlayerManager = new();
+        Assert.IsTrue(players.Count > 0, "invalid player Count on world, expected. At least 1");
 
-        PlayerManager.AddPlayer(GameObject.FindGameObjectsWithTag("Player").ToList());
+        manager.Batch(enemies);
+        manager.Init();
 
-        Manager.Batch(enemies);
-        Manager.Start();
+        Assert.IsTrue(enemies.Count() > 0, "you forgot to init enemies");
 
-        Assert.IsTrue(enemies.Length > 0, "you forgot to init enemies");
-        Debug.Log($"hive initialized, enemies: {enemies.Length}");
-
-        List<EnemyBatch> batches = Manager.Batches();
+        List<EnemyBatch> batches = manager.Batches();
 
         float angleIncrement = 360f / batches.Count;
 
@@ -75,6 +67,8 @@ public class Hive : MonoBehaviour
 
         //     MoveToPosition(enemy, pos);
         // }
+
+        Debug.Log($"hive initialized, enemies: {enemies.Count}, batches: {manager.Batches().Count}");
     }
 
     public static int GetId()
@@ -99,11 +93,12 @@ public class Hive : MonoBehaviour
     {
         //todo: remove this once were not just testing anymore
 
+
         enemies ??= FindObjectsByType<ActionEnemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
             .GroupBy(f => f.GetId())
             .Select(f => f.First())
-            .ToArray();
-        List<EnemyBatch> b = Manager.Batches();
+            .ToList();
+        List<EnemyBatch> b = manager.Batches();
         Assert.IsTrue(b.Count > 0, "no batch found");
 
         manager.Tick();
@@ -116,13 +111,13 @@ public class Hive : MonoBehaviour
     {
         handler.actions.Add(new DebugAction(handler, Priority.Medium, Color.green));
 
-        EnemyBatch? batch = Manager.GetEnemyBatch(handler.GetId());
+        EnemyBatch batch = handler.GetBatch();
 
-        Assert.IsTrue(batch.HasValue, "didnt batch the enemy yet");
+        Assert.IsTrue(batch.GetId() == 0, "didnt batch the enemy yet");
 
         NavMeshPath path()
         {
-            return GetAlternatePath(handler.transform.position, position, batch.Value.GetId());
+            return GetAlternatePath(handler.transform.position, position, batch.GetId());
         }
 
         Assert.IsTrue(path().corners.Length > 0, "invalid path on batching");
@@ -156,13 +151,13 @@ public class Hive : MonoBehaviour
         for (int i = 0; i < p.Count; i++)
         {
             GameObject point = p[i];
-            EnemyBatch? batch = Manager.GetEnemyBatch(handler.GetId());
+            EnemyBatch batch = handler.GetBatch();
 
-            Assert.IsTrue(batch.HasValue, "didnt batch the enemy yet");
+            Assert.IsTrue(batch.GetId() == 1, "didnt batch the enemy yet");
 
             NavMeshPath path()
             {
-                return GetAlternatePath(handler.transform.position, point.transform.position, batch.Value.GetId());
+                return GetAlternatePath(handler.transform.position, point.transform.position, batch.GetId());
             }
 
             Assert.IsTrue(path().corners.Length > 0, "invalid path on batching");
@@ -198,13 +193,16 @@ public class Hive : MonoBehaviour
         return path;
     }
 
-    public ActionEnemy[] Enemies()
+    public List<ActionEnemy> Enemies()
     {
-        return enemies;
+        return FindObjectsByType<ActionEnemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+            .ToList()
+            .GroupBy(f => f.GetId())
+            .Select(f => f.First())
+            .ToList();
     }
 
-    public static List<GameObject> Players()
-    {
-        return PlayerManager.Players();
-    }
+    public void Spawn() { }
+
+    public void Kill() { }
 }

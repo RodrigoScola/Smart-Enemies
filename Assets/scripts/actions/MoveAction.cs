@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Assertions;
 
+[CreateAssetMenu(fileName = "MoveAction", menuName = "Scriptable Objects/MoveAction")]
 public class MoveAction : Action
 {
     private readonly Priority _priority;
@@ -55,7 +56,7 @@ public class MoveAction : Action
         Assert.IsFalse(targetType == MoveTargetType.None, "cannot have a target type of none");
     }
 
-    public void Run()
+    public override void Run()
     {
         Assert.IsNotNull(agent, "forgot to add agent");
 
@@ -65,7 +66,7 @@ public class MoveAction : Action
         _ = agent.SetDestination(currentPath.corners[posIndex]);
     }
 
-    public void Tick()
+    public override void Tick()
     {
         Assert.IsNotNull(path, "trying to move to undefined path");
         List<Action> acts = parentHandler.actions.RunningActions();
@@ -107,27 +108,27 @@ public class MoveAction : Action
         }
     }
 
-    public ActionType GetActionType()
+    public override ActionType GetActionType()
     {
         return ActionType.Move;
     }
 
-    public Priority GetPriority()
+    public override Priority GetPriority()
     {
         return _priority;
     }
 
-    public ActionState GetState()
+    public override ActionState GetState()
     {
         return state;
     }
 
-    public void SetState(ActionState newState)
+    public override void State(ActionState newState)
     {
         state = newState;
     }
 
-    public int GetId()
+    public override int GetId()
     {
         return id;
     }
@@ -166,7 +167,7 @@ public class MoveAction : Action
     //     return closestDir / 30;
     // }
 
-    public void Finish()
+    public override void Finish()
     {
         Debug.Log($"finishing the action, {GetId()}");
         agent.ResetPath();

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class DemoPlayer : MonoBehaviour
@@ -10,6 +11,8 @@ public class DemoPlayer : MonoBehaviour
     [SerializeField]
     [Range(0, 1000)]
     private float bufferDistance;
+
+    private readonly Dictionary<float, Vector3> predictions = new();
 
     public GameObject goIndicator;
     public Vector3 v3AverageVelocity;
@@ -28,7 +31,7 @@ public class DemoPlayer : MonoBehaviour
         StartCoroutine(Check());
     }
 
-    private void Update()
+    public void Update()
     {
         ApplyForce();
     }
@@ -36,6 +39,8 @@ public class DemoPlayer : MonoBehaviour
     private IEnumerator Check()
     {
         yield return new WaitForEndOfFrame();
+
+        predictions.Clear();
 
         Vector3 v3Velocity = (gameObject.transform.position - v3PrevPos) / Time.deltaTime;
         Vector3 v3Accel = v3Velocity - v3PrevVel;
@@ -52,11 +57,19 @@ public class DemoPlayer : MonoBehaviour
 
     public Vector3 PredictPlayerPosition(float fTime)
     {
+        if (predictions.ContainsKey(fTime))
+        {
+            predictions.TryGetValue(fTime, out Vector3 val);
+            return val;
+        }
+
         //X0 + v0 * t + 1/2 a t^2
         Vector3 v3Ret =
             gameObject.transform.position
             + (v3AverageVelocity * Time.deltaTime * (fTime / Time.deltaTime))
             + (0.5f * v3AverageAcceleration * Time.deltaTime * Mathf.Pow(fTime / Time.deltaTime, 2));
+
+        predictions.TryAdd(fTime, v3Ret);
 
         return v3Ret;
     }

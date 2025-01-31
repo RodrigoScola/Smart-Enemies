@@ -1,5 +1,4 @@
 using System;
-using actions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.AI;
@@ -11,18 +10,19 @@ public enum MoveTargetType
     Position = 2,
 }
 
+[CreateAssetMenu(fileName = "FollowAction", menuName = "Scriptable Objects/FollowAction")]
 public class FollowAction : Action
 {
-    private int _id;
+    private readonly int _id;
     public ActionEnemy _handler;
-    private Priority _priority;
+    private readonly Priority _priority;
 
     private ActionState _state;
 
-    private Func<NavMeshPath> _destination;
+    private readonly Func<NavMeshPath> _destination;
     public NavMeshAgent _agent;
 
-    private MoveTargetType _targetType;
+    private readonly MoveTargetType _targetType;
 
     public FollowAction(
         ActionEnemy handler,
@@ -48,51 +48,54 @@ public class FollowAction : Action
         return _targetType;
     }
 
-    public void Finish()
+    public override void Finish()
     {
         Assert.NotNull(_agent, "forgot to init agent");
         _agent.ResetPath();
         _handler.actions.Finish(_id);
     }
 
-    public ActionType GetActionType()
+    public override ActionType GetActionType()
     {
         return ActionType.Move;
     }
 
-    public int GetId()
+    public override int GetId()
     {
         return _id;
     }
 
-    public Priority GetPriority()
+    public override Priority GetPriority()
     {
         return _priority;
     }
 
-    public ActionState GetState()
+    public override ActionState GetState()
     {
         return _state;
     }
 
-    public void SetState(ActionState newState)
+    public override void State(ActionState newState)
     {
         _state = newState;
     }
 
-    public void Tick()
+    public override void Tick()
     {
+        NavMeshPath destination = _destination();
+
+        if (destination.Equals(_agent.destination))
+        {
+            return;
+        }
+
         _agent.ResetPath();
 
-        // Visual.Marker(dest);
-
-        // _agent.SetDestination(Vector3.zero);
-        var destination = _destination();
         Assert.IsNotNull(destination, "trying to move to undefined path");
         // Assert.IsTrue(destination.corners.Length > 0, "invalid path to follow");
 
         _agent.SetPath(_destination());
     }
 
-    public void Run() { }
+    public override void Run() { }
 }

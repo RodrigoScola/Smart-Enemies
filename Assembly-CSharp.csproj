@@ -65,17 +65,19 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.0.35f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\scripts\actions\ScanAct.cs" />
+    <Compile Include="Assets\scripts\Hive\HiveActions\EnemyBatch.cs" />
     <Compile Include="Assets\scripts\Visual.cs" />
-    <Compile Include="Assets\scripts\actions\ScanAction.cs" />
-    <Compile Include="Assets\scripts\Hive\PlayerHive.cs" />
+    <Compile Include="Assets\scripts\Hive\HiveActions\HiveManager.cs" />
     <Compile Include="Assets\scripts\actions\MoveAction.cs" />
     <Compile Include="Assets\scripts\actions\DebugAction.cs" />
     <Compile Include="Assets\scripts\enemies\HealthSystem.cs" />
     <Compile Include="Assets\scripts\Context\Movement.cs" />
     <Compile Include="Assets\scripts\actions\FollowAction.cs" />
-    <Compile Include="Assets\scripts\Hive\HiveActions\HiveActionManager.cs" />
     <Compile Include="Assets\scripts\enemies\ActionEnemy.cs" />
     <Compile Include="Assets\scripts\Hive\Hive.cs" />
+    <Compile Include="Assets\scripts\actions\Action.cs" />
+    <Compile Include="Assets\scripts\Hive\PlayerHiv.cs" />
     <Compile Include="Assets\scripts\DemoPLayer.cs" />
     <Compile Include="Assets\scripts\ActionManager.cs" />
   </ItemGroup>
