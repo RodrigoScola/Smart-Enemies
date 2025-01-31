@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -19,7 +20,7 @@ public class MoveAction : Action
     public float minRepelStrength = 0.1f;
     public float repelStrength = 0.5f;
 
-    private readonly NavMeshPath path;
+    private readonly Func<NavMeshPath> path;
 
     private int posIndex;
 
@@ -34,7 +35,7 @@ public class MoveAction : Action
         return _targetType;
     }
 
-    public MoveAction(ActionEnemy handler, Priority priority, NavMeshPath pathing, MoveTargetType targetType)
+    public MoveAction(ActionEnemy handler, Priority priority, Func<NavMeshPath> pathing, MoveTargetType targetType)
     {
         id = Hive.GetId();
         _priority = priority;
@@ -43,7 +44,8 @@ public class MoveAction : Action
         parentHandler = handler;
 
         path = pathing;
-        Assert.IsTrue(pathing.corners.Length > 0, "was given an invalid path in the initial parts");
+
+        Assert.IsTrue(pathing().corners.Length > 0, "was given an invalid path in the initial parts");
 
         state = ActionState.Waiting;
         contextMap = Movement.MakeContextMap(size);
@@ -56,9 +58,11 @@ public class MoveAction : Action
     public void Run()
     {
         Assert.IsNotNull(agent, "forgot to add agent");
-        Assert.IsTrue(path.corners.Length > 0, "invalid path to run");
 
-        _ = agent.SetDestination(path.corners[posIndex]);
+        NavMeshPath currentPath = path();
+        Assert.IsTrue(currentPath.corners.Length > 0, "invalid path to run");
+
+        _ = agent.SetDestination(currentPath.corners[posIndex]);
     }
 
     public void Tick()
@@ -66,12 +70,14 @@ public class MoveAction : Action
         Assert.IsNotNull(path, "trying to move to undefined path");
         List<Action> acts = parentHandler.actions.RunningActions();
 
+        NavMeshPath currentPath = path();
+
         Assert.IsTrue(acts.Contains(this), "executing running action that is not running");
 
-        Vector3 target = path.corners[posIndex];
+        Vector3 target = currentPath.corners[posIndex];
 
         Assert.IsNotNull(path, "should path be null?");
-        Assert.IsTrue(path.corners.Length > 0, "was given an invalid path");
+        Assert.IsTrue(currentPath.corners.Length > 0, "was given an invalid path");
 
         float dist = Vector3.Distance(parentHandler.transform.position, target);
 
@@ -81,22 +87,22 @@ public class MoveAction : Action
             return;
         }
         Assert.IsTrue(
-            posIndex < path.corners.Length,
-            $"the distance to the target is completed but pos index is not correct, expected:{path.corners.Length}, got: {posIndex}"
+            posIndex < currentPath.corners.Length,
+            $"the distance to the target is completed but pos index is not correct, expected:{currentPath.corners.Length}, got: {posIndex}"
         );
 
         posIndex++; // Move to the next waypoint
-        Debug.Log($"moving path, current {posIndex}, total {path.corners.Length}");
+        Debug.Log($"moving path, current {posIndex}, total {currentPath.corners.Length}");
 
         // Check if the path is completed
-        if (posIndex >= path.corners.Length)
+        if (posIndex >= currentPath.corners.Length)
         {
             Debug.Log("ExecuteNow moving action");
             Finish();
         }
         else
         {
-            Vector3 newPos = path.corners[posIndex];
+            Vector3 newPos = currentPath.corners[posIndex];
             _ = agent.SetDestination(newPos);
         }
     }

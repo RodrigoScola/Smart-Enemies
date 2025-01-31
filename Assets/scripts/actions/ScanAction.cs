@@ -93,7 +93,7 @@ public class ScanAction : Action
                     new MoveAction(
                         _handler,
                         Priority.High,
-                        Hive.GetPath(tag.transform.position, _handler.transform.position),
+                        () => Hive.GetPath(tag.transform.position, _handler.transform.position),
                         MoveTargetType.Position
                     ),
                     false

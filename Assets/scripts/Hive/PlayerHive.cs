@@ -27,7 +27,7 @@ public class PlayerHive
         foreach (GameObject player in players)
         {
             Assert.IsFalse(_players.ContainsKey(player.GetInstanceID()), "cannot have duplicate players");
-            Assert.IsNotNull(player.GetComponent<DemoPLayer>(), "player does not have demo player component");
+            Assert.IsNotNull(player.GetComponent<DemoPlayer>(), "player does not have demo player component");
 
             playerPath.TryAdd(player.GetInstanceID(), new());
             _players.TryAdd(player.GetInstanceID(), player);

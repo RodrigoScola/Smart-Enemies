@@ -22,7 +22,7 @@ public class Visual : MonoBehaviour
         Destroy(marker, 5f);
     }
 
-    private static void DrawSphere(Vector3 pos, Color col)
+    private static void DrawSphere(Vector3 pos, Color col, float time)
     {
         GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         sphere.transform.position = pos;
@@ -31,12 +31,16 @@ public class Visual : MonoBehaviour
 
         rend.material.color = col;
 
-        Destroy(sphere, 5f);
+        Destroy(sphere, time);
     }
 
-    public static void Sphere(Vector3 pos) => DrawSphere(pos, Color.blue);
+    public static void Sphere(Vector3 pos) => DrawSphere(pos, Color.blue, 5f);
 
-    public static void Sphere(Vector3 pos, Color col) => DrawSphere(pos, col);
+    public static void Sphere(Vector3 pos, Color color, float time) => DrawSphere(pos, color, time);
+
+    public static void Sphere(Vector3 pos, float time) => DrawSphere(pos, Color.blue, time);
+
+    public static void Sphere(Vector3 pos, Color col) => DrawSphere(pos, col, 5f);
 
     public static void Line(Vector3 start, Vector3 end, Color color, float time) => DrawLine(start, end, color, time);
 

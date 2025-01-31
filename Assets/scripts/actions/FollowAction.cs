@@ -17,16 +17,19 @@ public class FollowAction : Action
     public ActionEnemy _handler;
     private Priority _priority;
 
-    private NavMeshPath _path;
-
     private ActionState _state;
 
-    private Func<Vector3> _destination;
+    private Func<NavMeshPath> _destination;
     public NavMeshAgent _agent;
 
     private MoveTargetType _targetType;
 
-    public FollowAction(ActionEnemy handler, Priority priority, Func<Vector3> destination, MoveTargetType targetType)
+    public FollowAction(
+        ActionEnemy handler,
+        Priority priority,
+        Func<NavMeshPath> destination,
+        MoveTargetType targetType
+    )
     {
         _handler = handler;
 
@@ -34,8 +37,6 @@ public class FollowAction : Action
         Assert.IsNotNull(_agent, "forgot to init navmesh agent to follow");
         _destination = destination;
 
-        // _path = Hive.GetAlternatePath(_handler.transform.position, destination(this), _handler.GetBatch().GetId());
-        _path = Hive.GetPath(_handler.transform.position, _destination());
         _id = Hive.GetId();
         _priority = priority;
         _targetType = targetType;
@@ -83,12 +84,14 @@ public class FollowAction : Action
     {
         _agent.ResetPath();
 
-        // _agent.SetDestination(Vector3.zero);
-        _path = Hive.GetAlternatePath(_handler.transform.position, _destination(), _handler.GetBatch().GetId());
-        Assert.IsNotNull(_path, "trying to move to undefined path");
-        Assert.IsTrue(_path.corners.Length > 0, "invalid path to follow");
+        // Visual.Marker(dest);
 
-        _agent.SetPath(_path);
+        // _agent.SetDestination(Vector3.zero);
+        var destination = _destination();
+        Assert.IsNotNull(destination, "trying to move to undefined path");
+        // Assert.IsTrue(destination.corners.Length > 0, "invalid path to follow");
+
+        _agent.SetPath(_destination());
     }
 
     public void Run() { }

@@ -1,89 +1,86 @@
-using NUnit.Framework;
+using System.Collections;
 using UnityEngine;
 
-public class DemoPLayer : MonoBehaviour
+public class DemoPlayer : MonoBehaviour
 {
-    private Hive hive;
+    [SerializeField]
+    [Range(0, 1000)]
+    private float force;
 
     [SerializeField]
-    [UnityEngine.Range(0, 1000)]
+    [Range(0, 1000)]
     private float bufferDistance;
 
-    private MeshRenderer render;
+    public GameObject goIndicator;
+    public Vector3 v3AverageVelocity;
+    public Vector3 v3AverageAcceleration;
 
-    private void Start()
+    private Vector3 v3PrevVel;
+    private Vector3 PrevAccel;
+    private Vector3 v3PrevPos;
+
+    public GameObject demoBall;
+
+    private void Start() { }
+
+    private void LateUpdate()
     {
-        Hive[] hives = FindObjectsByType<Hive>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        Assert.IsTrue(hives.Length == 1, $"invalid hive length, got {hives.Length}");
-
-        GameObject Floor = GameObject.FindWithTag("floor");
-
-        Assert.IsNotNull(Floor, "floor is undefined");
-
-        render = Floor.GetComponent<MeshRenderer>();
-
-        hive = hives[0];
+        StartCoroutine(Check());
     }
 
-    // Update is called once per frame
     private void Update()
     {
-        ActionEnemy[] enemies = hive.Enemies();
-
-        Vector3 outpos = Vector3.zero;
-
-        foreach (ActionEnemy enemy in enemies)
-        {
-            Vector3 pos = enemy.transform.position;
-            Vector3 direction = transform.position - pos;
-            float dist = Vector3.Distance(pos, transform.position);
-
-            if (dist < 10f)
-            {
-                outpos += direction.normalized * (8f - dist);
-            }
-        }
-
-        outpos *= Time.deltaTime;
-
-        Vector3 min = render.bounds.min;
-        Vector3 max = render.bounds.max;
-
-        Vector3 top = new(min.x, 0, min.z);
-        Vector3 left = new(min.x, 0, min.z);
-        Vector3 right = new(max.x, 0, max.z);
-        Vector3 bottom = new(max.x, 0, max.z);
-
-        if (
-            outpos.x + transform.position.x > bottom.x - bufferDistance
-            || outpos.x + transform.position.x < top.x + bufferDistance
-        )
-        {
-            outpos.x *= -1;
-        }
-
-        if (
-            outpos.z + transform.position.z < left.z + bufferDistance
-            || outpos.z + transform.position.z > right.z - bufferDistance
-        )
-        {
-            outpos.z *= -1;
-        }
-
-        outpos.y = 0;
-        transform.position += outpos;
-        transform.rotation = Quaternion.LookRotation(transform.position);
+        ApplyForce();
     }
 
-    public Vector3 Right(float dist)
+    private IEnumerator Check()
     {
-        Assert.IsTrue(dist > 0, $"distance cannot be less than 0, got: ({dist})");
-        return transform.position + (dist * Vector3.right);
+        yield return new WaitForEndOfFrame();
+
+        Vector3 v3Velocity = (gameObject.transform.position - v3PrevPos) / Time.deltaTime;
+        Vector3 v3Accel = v3Velocity - v3PrevVel;
+
+        v3AverageVelocity = v3Velocity;
+        v3AverageAcceleration = v3Accel;
+
+        demoBall.transform.position = PredictPlayerPosition(0.5f);
+
+        v3PrevPos = gameObject.transform.position;
+        v3PrevVel = v3Velocity;
+        PrevAccel = v3Accel;
     }
 
-    public Vector3 Left(float dist)
+    public Vector3 PredictPlayerPosition(float fTime)
     {
-        Assert.IsTrue(dist > 0, $"distance cannot be less than 0, got: ({dist})");
-        return transform.position + (Vector3.left * dist);
+        //X0 + v0 * t + 1/2 a t^2
+        Vector3 v3Ret =
+            gameObject.transform.position
+            + (v3AverageVelocity * Time.deltaTime * (fTime / Time.deltaTime))
+            + (0.5f * v3AverageAcceleration * Time.deltaTime * Mathf.Pow(fTime / Time.deltaTime, 2));
+
+        return v3Ret;
+    }
+
+    private void ApplyForce()
+    {
+        if (Input.GetKey(KeyCode.A))
+        {
+            transform.position += Vector3.left * force * Time.deltaTime;
+        }
+
+        if (Input.GetKey(KeyCode.D))
+        {
+            transform.position += Vector3.right * force * Time.deltaTime;
+        }
+
+        if (Input.GetKey(KeyCode.W))
+        {
+            transform.position += Vector3.forward * force * Time.deltaTime;
+        }
+
+        if (Input.GetKey(KeyCode.S))
+        {
+            transform.position += Vector3.back * force * Time.deltaTime;
+        }
     }
 }

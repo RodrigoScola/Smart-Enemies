@@ -42,6 +42,8 @@ public class ActionHandler
 {
     public int concurrentActions = 2;
 
+    public int totalActionsPassed = 0;
+
     private ActionEnemy parent;
 
     [SerializeField]
@@ -52,11 +54,6 @@ public class ActionHandler
     private Dictionary<int, Action> _actions = new();
 
     public void Start()
-    {
-        runningActionTypes ??= new();
-    }
-
-    private void OnEnable()
     {
         runningActionTypes ??= new();
     }
@@ -73,6 +70,10 @@ public class ActionHandler
     public ActionHandler(ActionEnemy enemy)
     {
         parent = enemy;
+        Assert.IsTrue(
+            totalActionsPassed == 0,
+            $"actions should never be reset?? , got: {totalActionsPassed}, should be 0"
+        );
 
         runningActionTypes ??= new();
     }
@@ -85,7 +86,6 @@ public class ActionHandler
                 action.GetState() == ActionState.Finishing,
                 $"trying to finish an action that is not ready to finish, received: {action.GetState()}"
             );
-            Debug.Log($"finishing an action that is to finish, ({action.GetId()}) state: {action.GetState()}");
             action.Finish();
             _ = _actions.Remove(action.GetId());
             // runningActionTypes.Remove(action.GetActionType());
@@ -100,22 +100,14 @@ public class ActionHandler
 
         foreach (Action action in RunningActions())
         {
-            if (highestAction == null)
-            {
-                highestAction = action;
-            }
+            highestAction ??= action;
             if (action.GetPriority() > highestAction.GetPriority() && action.GetActionType() != ActionType.Idle)
             {
                 highestAction = action;
             }
         }
 
-        if (highestAction == null)
-        {
-            return ActionType.Idle;
-        }
-
-        return highestAction.GetActionType();
+        return highestAction == null ? ActionType.Idle : highestAction.GetActionType();
     }
 
     public void Tick()
@@ -276,6 +268,7 @@ public class ActionHandler
 
     public void Remove(Action action)
     {
+        Assert.IsTrue(totalActionsPassed > 0, "trying to remove an action when enemy has never seen any biactions");
         Assert.IsNotNull(_actions.ContainsKey(action.GetId()), "trying to remove an action that does not exist");
 
         if (action.GetState() == ActionState.Running)
@@ -294,6 +287,8 @@ public class ActionHandler
     public void Add(Action action)
     {
         Assert.IsNotNull(action, "trying to initialize an null action?");
+
+        totalActionsPassed++;
 
         _actions ??= new Dictionary<int, Action>();
         Assert.IsFalse(_actions.TryGetValue(action.GetId(), out _), "action already in actions");

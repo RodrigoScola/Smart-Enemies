@@ -23,6 +23,16 @@ public class Hive : MonoBehaviour
 
     public static LayerMask EnemyMask;
 
+    public static new void Destroy(Object obj)
+    {
+        Object.Destroy(obj);
+    }
+
+    public static void Create(Object obj)
+    {
+        Instantiate(obj);
+    }
+
     private void Start()
     {
         EnemyMask = LayerMask.GetMask("Enemy");
@@ -38,12 +48,13 @@ public class Hive : MonoBehaviour
 
         PlayerManager.AddPlayer(GameObject.FindGameObjectsWithTag("Player").ToList());
 
-        Manager.Rebatch();
+        Manager.Batch(enemies);
+        Manager.Start();
 
         Assert.IsTrue(enemies.Length > 0, "you forgot to init enemies");
         Debug.Log($"hive initialized, enemies: {enemies.Length}");
 
-        List<BatchEnemies> batches = Manager.Batches();
+        List<EnemyBatch> batches = Manager.Batches();
 
         float angleIncrement = 360f / batches.Count;
 
@@ -56,13 +67,14 @@ public class Hive : MonoBehaviour
             Vector3 pos = new(Mathf.Cos(angle), 0, Mathf.Sin(angle));
             positions.Add(batches[i].GetId(), pos * 20f);
         }
-        foreach (ActionEnemy enemy in enemies)
-        {
-            Assert.IsTrue(enemy.GetBatch().GetId() > -1, "invalid batch to initialize");
-            positions.TryGetValue(enemy.GetBatch()!.GetId(), out Vector3 pos);
 
-            MoveToPosition(enemy, pos);
-        }
+        // foreach (ActionEnemy enemy in enemies)
+        // {
+        //     Assert.IsTrue(enemy.GetBatch().GetId() > -1, "invalid batch to initialize");
+        //     positions.TryGetValue(enemy.GetBatch()!.GetId(), out Vector3 pos);
+
+        //     MoveToPosition(enemy, pos);
+        // }
     }
 
     public static int GetId()
@@ -70,11 +82,16 @@ public class Hive : MonoBehaviour
         return ++ids;
     }
 
+    public static NavMeshPath GetPath(Vector3 start, Vector3 end, NavMeshPath path)
+    {
+        NavMesh.CalculatePath(start, end, NavMesh.AllAreas, path);
+        return path;
+    }
+
     public static NavMeshPath GetPath(Vector3 start, Vector3 end)
     {
         NavMeshPath path = new();
         NavMesh.CalculatePath(start, end, NavMesh.AllAreas, path);
-
         return path;
     }
 
@@ -86,7 +103,7 @@ public class Hive : MonoBehaviour
             .GroupBy(f => f.GetId())
             .Select(f => f.First())
             .ToArray();
-        List<BatchEnemies> b = Manager.Batches();
+        List<EnemyBatch> b = Manager.Batches();
         Assert.IsTrue(b.Count > 0, "no batch found");
 
         manager.Tick();
@@ -99,13 +116,16 @@ public class Hive : MonoBehaviour
     {
         handler.actions.Add(new DebugAction(handler, Priority.Medium, Color.green));
 
-        BatchEnemies? batch = Manager.GetEnemyBatch(handler.GetId());
+        EnemyBatch? batch = Manager.GetEnemyBatch(handler.GetId());
 
         Assert.IsTrue(batch.HasValue, "didnt batch the enemy yet");
 
-        NavMeshPath path = GetAlternatePath(handler.transform.position, position, batch.Value.GetId());
+        NavMeshPath path()
+        {
+            return GetAlternatePath(handler.transform.position, position, batch.Value.GetId());
+        }
 
-        Assert.IsTrue(path.corners.Length > 0, "invalid path on batching");
+        Assert.IsTrue(path().corners.Length > 0, "invalid path on batching");
 
         handler.actions.Add(new MoveAction(handler, Priority.High, path, MoveTargetType.Position));
 
@@ -115,7 +135,12 @@ public class Hive : MonoBehaviour
     public static void Follow(ActionEnemy enemy, GameObject player)
     {
         enemy.actions.Add(
-            new FollowAction(enemy, Priority.High, () => player.transform.position, MoveTargetType.Player)
+            new FollowAction(
+                enemy,
+                Priority.High,
+                () => GetAlternatePath(enemy.transform.position, player.transform.position, enemy.GetBatch()!.GetId()),
+                MoveTargetType.Player
+            )
         );
     }
 
@@ -127,22 +152,20 @@ public class Hive : MonoBehaviour
         Assert.IsTrue(p.Count > 0, "there are no points to be initted");
 
         // handler.actions.Add(new ScanAction(GetId(), handler, Priority.Low));
-        handler.actions.Add(new DebugAction(handler, Priority.Medium, Color.green));
 
         for (int i = 0; i < p.Count; i++)
         {
             GameObject point = p[i];
-            BatchEnemies? batch = Manager.GetEnemyBatch(handler.GetId());
+            EnemyBatch? batch = Manager.GetEnemyBatch(handler.GetId());
 
             Assert.IsTrue(batch.HasValue, "didnt batch the enemy yet");
 
-            NavMeshPath path = GetAlternatePath(
-                handler.transform.position,
-                point.transform.position,
-                batch.Value.GetId()
-            );
+            NavMeshPath path()
+            {
+                return GetAlternatePath(handler.transform.position, point.transform.position, batch.Value.GetId());
+            }
 
-            Assert.IsTrue(path.corners.Length > 0, "invalid path on batching");
+            Assert.IsTrue(path().corners.Length > 0, "invalid path on batching");
 
             handler.actions.Add(new MoveAction(handler, Priority.High, path, MoveTargetType.Position));
         }

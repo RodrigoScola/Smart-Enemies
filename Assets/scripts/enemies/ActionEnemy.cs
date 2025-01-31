@@ -12,12 +12,15 @@ public class ActionEnemy : MonoBehaviour
     [SerializeField]
     public ActionHandler actions;
 
-    public BatchEnemies GetBatch()
+    [SerializeField]
+    private bool hasStarted = false;
+
+    public EnemyBatch GetBatch()
     {
-        BatchEnemies? batch = Hive.Manager.GetEnemyBatch(_id);
+        EnemyBatch? batch = Hive.Manager.GetEnemyBatch(_id);
         Assert.IsNotNull(batch, "did not batch enemy yet");
 
-        return (BatchEnemies)batch;
+        return (EnemyBatch)batch;
     }
 
     private void OnEnable()
@@ -39,16 +42,17 @@ public class ActionEnemy : MonoBehaviour
 
     private void Start()
     {
+        agent = GetComponent<NavMeshAgent>();
         _id = Hive.GetId();
         actions = new ActionHandler(this);
         actions.Start();
-        agent = GetComponent<NavMeshAgent>();
-    }
 
-    private void Update() { }
+        hasStarted = true;
+    }
 
     public void Tick()
     {
+        Assert.IsTrue(hasStarted, "ticking while the enemy has not started");
         actions.Tick();
     }
 
